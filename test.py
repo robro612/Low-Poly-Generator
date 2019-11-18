@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.image import imread
+from scipy.spatial import Delaunay
 from tkinter import *
-import cv2, random, time
+import cv2, random, time, os
 
 
 def plot(filepath):
@@ -60,7 +61,6 @@ for row in range(edges.shape[0]):
 points = np.array(points)
 print("adding points to list",(time.time() - t) * 1000)
 
-from scipy.spatial import Delaunay
 tri = Delaunay(points)
 print(len(tri.simplices))
 # tri.simplices = tri.simplices[50:100]

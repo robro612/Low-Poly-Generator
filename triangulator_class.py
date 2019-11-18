@@ -13,11 +13,15 @@ import cv2, random, time
 # time to test runtime during testing
 
 class LowPolyGenerator():
-    def __init__(self, imagePath, blurSize=3, grayScale=False, nodeSampleRate=0.01, randomNoiseRate=0.0001, verbose = False):
+    def __init__(self, imagePath, blurSize=3, grayScale=False,
+                nodeSampleRate=0.01, randomNoiseRate=0.0001, verbose = False,
+                saveResults = False):
         self.path = imagePath
+        self.blurSize = blurSize
         self.nodeSampleRate = nodeSampleRate
         self.randomNoiseRate = randomNoiseRate
         self.verbose = verbose
+        self.saveResults = saveResults
         self.img = self.loadImage()
 
 
@@ -28,8 +32,18 @@ class LowPolyGenerator():
             print("Image was not found in directory")
             return
         if self.verbose:
-            print(f"Loading Image: {self.path.split("/")[-1]}")
+            fileName = self.path.split("/")[-1]
+            print(f"Loading Image: {fileName}")
         return image
 
-    @staticmethod
-    def preProcessImage(img, blurSize, grayScale):
+    def preProcessImage(self, img, blurSize, grayScale):
+        msg = ""
+        if grayScale:
+            preProcessed= np.dot(img[...,:3], [.3, .6, .1])
+            mgs += "Converting to grayscale \n"
+        if blurSize > 0:
+            preProcessed = cv2.blur(img, (blurSize, blurSize))
+            msg += f"blurring with a normalized box filter of size {blurSize}"
+        if self.verbose:
+            print(msg)
+        return preProcessed
