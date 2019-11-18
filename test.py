@@ -14,7 +14,7 @@ def plot(filepath):
 
 
 
-file = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/rafaCompare.jpg"
+file = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/kendrick.jpg"
 
 g = file.split("/")[-1]
 
@@ -49,10 +49,10 @@ points.append([gr_img.shape[1],0])
 t = time.time()
 for row in range(edges.shape[0]):
     for col in range(edges.shape[1]):
-        if random.random() > .999 and random.random() > .999:
+        if random.random() > .995 and random.random() > .999:
             points.append([col,row])
         elif edges[row][col] == 255:
-            if random.random() > 0.99:
+            if random.random() > 0.999:
                 edges[row][col] = 0
                 points.append([col,row])
 
