@@ -14,7 +14,7 @@ def plot(filepath):
 
 
 
-file = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/kendrick.jpg"
+file = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/rafaCompare.jpg"
 
 g = file.split("/")[-1]
 
@@ -22,17 +22,19 @@ g = file.split("/")[-1]
 
 t = time.time()
 img = imread(file)
-print(type(img))
+print(img.shape)
 print("read",(time.time() - t) * 1000)
 
 
 t = time.time()
-gr_img = np.dot(img[...,:3], [.3, .6, .1])
+#gr_img = np.dot(img[:,:,:3], [.3, .6, .1])
+# plt.imshow(gr_img, cmap = "gray")
+# plt.show()
 #gr_img = img
 # print(gr_img.shape)
 gr_img = cv2.blur(img,(5,5))
 gr_img = cv2.filter2D(gr_img,-1,kernel = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]]))
-edges = cv2.Canny(gr_img,20,80)
+edges = cv2.Canny(gr_img,1,100)
 print("BRO SRSYLT", type(gr_img))
 # print(img.shape,edges.shape)
 # print(type(edges))
@@ -46,15 +48,19 @@ points.append([gr_img.shape[1],gr_img.shape[0]])
 points.append([0,gr_img.shape[0]])
 points.append([gr_img.shape[1],0])
 
+sampleRate = edges.shape[0]*edges.shape[1]
+print(400/sampleRate)
 t = time.time()
 for row in range(edges.shape[0]):
     for col in range(edges.shape[1]):
-        if random.random() > .9995:
-            points.append([col,row])
-        elif edges[row][col] == 255:
-            if random.random() > 0.99:
-                edges[row][col] = 0
-                points.append([col,row])
+        if edges[row, col] == 255:
+            # actual points
+            if random.random() > 0.8:
+                # edges[row][col] = 0
+                points.append((col,row))
+        elif random.random() < 400/sampleRate:
+            # extra noise
+            points.append((col,row))
 
 
 
