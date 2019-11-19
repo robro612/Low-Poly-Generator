@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.image import imread
+from scipy.spatial import Delaunay
 from tkinter import *
 import cv2, random, time
 # Uses numpy for storage of images
@@ -65,9 +66,12 @@ class LowPolyGenerator():
         x2, y2 = point2
         return ((x2-x1)**2 + (y2-y1)**2)**0.5
 
+    # Uses Canny edge detection to get all nodes, then pares them down by
+    # removing all withing a given radius of another
+    # returns a list of nodes in tuple form
     def edgeDetection(self):
+        # uses cv2's canny edge detection filter
         canny = cv2.Canny(image, self.cannyLow, self.cannyHigh)
-
         nodes = []
         threshold = self.nodeSampleDistanceThreshold
         noiseProbability = self.randomNoiseRate/(img.shape[0]*img.shape[1])
@@ -91,3 +95,25 @@ class LowPolyGenerator():
                     (img.shape[1], (img.shape[0])]:
             if point not in nodes:
                 nodes.append(point)
+        return nodes
+
+    @staticMethod
+    def getAverageTriangleColor(simplex, nodes, image):
+        # each simplex is a three-list of the indices of points from the passed
+        # point array that make a given triangle
+        vertices = [nodes[i] for i in simplex]
+        points = [(vertex[0], vertex[1]) for vertex in vertices]
+        row,col = 0,0
+        for point in points:
+            row += point[0]
+            col += point[1]
+        row //= 3
+        col //= 3
+        return image[col][row]
+
+    # uses scipy's implementation of Delaunay triangulation
+    def triangulate(self, nodes):
+        delaunay = Delaunay(nodes)
+        simplices = delaunay.simplices
+        colorDict = dict()
+        # IN PROGRESS
