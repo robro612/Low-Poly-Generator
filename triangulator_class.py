@@ -28,7 +28,7 @@ class LowPolyGenerator():
         self.originalImage = self.loadImage()
         self.image = self.loadImage()
 
-
+    #Loads image using matplotlib's imread method
     def loadImage(self):
         try:
             img = imread(self.path)
@@ -40,9 +40,9 @@ class LowPolyGenerator():
             print(f"Loading Image: {fileName}")
         return image
 
+    # preprocesses image using grayscale and blur for speed, and a sharpen
+    # filter for increased edge detection
     def preProcessImage(self):
-        # preprocesses image using grayscale and blur for speed, and a sharpen
-        # filter for increased edge detection
         message = ""
         if self.grayScale:
             preProcessed = np.dot(self.image[:,:,:3], [0.3, 0.6, 0.1])
@@ -59,9 +59,9 @@ class LowPolyGenerator():
             print(message)
         return preProcessed
 
+    # takes in two tuples, returns euclidean distance
     @staticMethod
     def distance(point1, point2):
-        # takes in two tuples, returns euclidean distance
         x1, y1 = point1
         x2, y2 = point2
         return ((x2-x1)**2 + (y2-y1)**2)**0.5
@@ -98,9 +98,11 @@ class LowPolyGenerator():
         return nodes
 
     @staticMethod
-    def getAverageTriangleColor(simplex, nodes, image):
+    def getAverageColor(simplex):
         # each simplex is a three-list of the indices of points from the passed
         # point array that make a given triangle
+        nodes = self.nodes
+        image = self.image
         vertices = [nodes[i] for i in simplex]
         points = [(vertex[0], vertex[1]) for vertex in vertices]
         row,col = 0,0
@@ -111,9 +113,18 @@ class LowPolyGenerator():
         col //= 3
         return image[col][row]
 
+    # RGB conversion formula from
+    # http://www.cs.cmu.edu/~112/notes/notes-graphics-part2.html
+    @staticMethod
+    def rgbString(r,g,b):
+        return "#%02x%02x%02x" % (red, green, blue)
+
     # uses scipy's implementation of Delaunay triangulation
     def triangulate(self, nodes):
         delaunay = Delaunay(nodes)
         simplices = delaunay.simplices
-        colorDict = dict()
-        # IN PROGRESS
+        triangles = dict()
+        # iterates for each pair of three vertices of a given triangle
+        for simplex in simplices:
+            triangles[simplex] = self.rgbString(self.getAverageColor(simplex))
+        return triangles, delaunay

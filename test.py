@@ -14,7 +14,7 @@ def plot(filepath):
 
 
 
-file = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/rafaCompare.jpg"
+file = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/nico.jpg"
 
 g = file.split("/")[-1]
 
@@ -27,7 +27,7 @@ print("read",(time.time() - t) * 1000)
 
 
 t = time.time()
-#gr_img = np.dot(img[:,:,:3], [.3, .6, .1])
+gr_img = np.dot(img[:,:,:3], [.3, .6, .1])
 # plt.imshow(gr_img, cmap = "gray")
 # plt.show()
 #gr_img = img
