@@ -32,7 +32,7 @@ gr_img = np.dot(img[...,:3], [.3, .6, .1])
 # print(gr_img.shape)
 gr_img = cv2.blur(img,(5,5))
 gr_img = cv2.filter2D(gr_img,-1,kernel = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]]))
-edges = cv2.Canny(gr_img,10,100)
+edges = cv2.Canny(gr_img,20,80)
 print("BRO SRSYLT", type(gr_img))
 # print(img.shape,edges.shape)
 # print(type(edges))
@@ -49,10 +49,10 @@ points.append([gr_img.shape[1],0])
 t = time.time()
 for row in range(edges.shape[0]):
     for col in range(edges.shape[1]):
-        if random.random() > .995 and random.random() > .999:
+        if random.random() > .9995:
             points.append([col,row])
         elif edges[row][col] == 255:
-            if random.random() > 0.999:
+            if random.random() > 0.99:
                 edges[row][col] = 0
                 points.append([col,row])
 
