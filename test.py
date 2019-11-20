@@ -59,7 +59,7 @@ for row in range(edges.shape[0]):
 
         if edges[row, col] == 255:
             # actual points
-            if random.random() > 0.8:
+            if random.random() > 0.93:
                 # edges[row][col] = 0
                 points.append((col,row))
         elif random.random() < 400/sampleRate:
@@ -120,7 +120,7 @@ def runDrawing(width=img.shape[1], height=img.shape[0]):
     root.mainloop()
     print("bye!")
 
-#runDrawing()
+runDrawing()
 
 # print(type(tri))
 # print(tri.simplices[0])

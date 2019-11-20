@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.image import imread
+from scipy.spatial import Delaunay
 from tkinter import *
 import cv2, random, time, os
 

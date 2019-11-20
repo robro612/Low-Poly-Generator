@@ -14,7 +14,7 @@ import cv2, random, time
 # time to test runtime during testing
 
 class LowPolyGenerator():
-    def __init__(self, imagePath, blurSize=7, sharpen=True,
+    def __init__(self, imagePath, blurSize=5, sharpen=True,
                 nodeSampleDistanceThreshold=10, randomNoiseRate=300,
                 cannyLow=50, cannyHigh=100, verbose=False,
                 saveResults=False):
@@ -76,7 +76,6 @@ class LowPolyGenerator():
     # returns a list of nodes in tuple form
     def edgeDetection(self):
         # uses cv2's canny edge detection filter
-        #CHANGE THESE PARAMETERS BACK TO CANNYLOW AND HIGH
         canny = cv2.Canny(self.preProcessed, self.cannyLow, self.cannyHigh)
         nodes = []
         threshold = self.nodeSampleDistanceThreshold
@@ -84,7 +83,7 @@ class LowPolyGenerator():
         (canny.shape[0]*canny.shape[1])
         for row in range(canny.shape[0]):
             for col in range(canny.shape[1]):
-                if canny[row, col] == 255 and random.random() < 20000/(self.image.shape[0]*self.image.shape[1]):
+                if canny[row, col] == 255 and random.random() < 2500000/(self.image.shape[0]*self.image.shape[1]):
                     nodes.append((col, row))
                 elif random.random() < noiseProbability:
                     nodes.append((col, row))
@@ -93,11 +92,12 @@ class LowPolyGenerator():
         print(len(nodes))
         i = 0
         count = 0
-        threshold = 20
+        threshold = self.nodeSampleDistanceThreshold
         while i < len(nodes):
             j = i + 1
             while j < len(nodes):
-                if random.random() > .7 and LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
+                if random.random() > .5 and \
+                LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
                     count += 1
                     nodes.pop(j)
                 else:
@@ -158,6 +158,8 @@ class LowPolyGenerator():
             print(f"Time to generate: {end-start}")
         return self.triangles, self.delaunay, self.image, self.path
 
+# Test F
+
 def draw(canvas, width, height, triangles, nodes):
     canvas.create_rectangle(0,0, width, height, fill = "black")
     for simplex in triangles:
@@ -165,8 +167,8 @@ def draw(canvas, width, height, triangles, nodes):
         x1,y1 = nodes[simplex[1]][0], nodes[simplex[1]][1]
         x2,y2 = nodes[simplex[2]][0], nodes[simplex[2]][1]
         canvas.create_polygon(x0,y0,x1,y1,x2,y2, fill = triangles[simplex],
-        width = 0)
-        # add outline = colorString to get rid of thin black outlines
+        width = 0, outline = triangles[simplex])
+        # add outline = triangles[simplex] to get rid of thin black outlines
 
 def runDrawing(lowPolyGenerator):
     root = Tk()
@@ -181,10 +183,13 @@ def runDrawing(lowPolyGenerator):
     root.mainloop()
     print("bye!")
 
-path = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/obama.jpg"
+path = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/lionRoar.jpg"
 lowPolyGenerator = LowPolyGenerator(path)
 lowPolyGenerator.generateTriangulation()
 runDrawing(lowPolyGenerator)
 
 plt.imshow(lowPolyGenerator.canny)
 plt.show()
+print(" ratio of pixels to triangles: ",
+(lowPolyGenerator.image.shape[0]*lowPolyGenerator.image.shape[1]) / \
+len(lowPolyGenerator.triangles))
