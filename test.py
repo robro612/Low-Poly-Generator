@@ -28,17 +28,20 @@ print("read",(time.time() - t) * 1000)
 
 t = time.time()
 gr_img = np.dot(img[:,:,:3], [.3, .6, .1])
+print("BROSBNSFBNSB,", gr_img)
 # plt.imshow(gr_img, cmap = "gray")
 # plt.show()
 #gr_img = img
-# print(gr_img.shape)
-gr_img = cv2.blur(img,(5,5))
+# print("NOJOKE" , gr_img.shape)
+gr_img = cv2.blur(img,(3,3))
+# print("blurred,", gr_img)
 gr_img = cv2.filter2D(gr_img,-1,kernel = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]]))
+# print("HOW", gr_img)
 edges = cv2.Canny(gr_img,1,100)
-print("BRO SRSYLT", type(gr_img))
+# print("BRO SRSYLT", type(gr_img))
 # print(img.shape,edges.shape)
 # print(type(edges))
-# print(edges[190,565])
+print("AHOY", edges[190,565])
 
 print("Canny",(time.time() - t) * 1000)
 
@@ -53,6 +56,7 @@ print(400/sampleRate)
 t = time.time()
 for row in range(edges.shape[0]):
     for col in range(edges.shape[1]):
+
         if edges[row, col] == 255:
             # actual points
             if random.random() > 0.8:
@@ -116,31 +120,31 @@ def runDrawing(width=img.shape[1], height=img.shape[0]):
     root.mainloop()
     print("bye!")
 
-runDrawing()
+#runDrawing()
 
-print(type(tri))
-print(tri.simplices[0])
-print("delaunay",(time.time() - t) * 1000)
-print(points[tri.simplices[5]])
-
-f = plt.figure()
-f.add_subplot(1,2,1)
-plt.imshow(edges, cmap = 'gray')
-f.add_subplot(1,2,2)
-plt.imshow(gr_img, cmap = 'gray')
-plt.show()
-
-print(edges[0][0])
-
-print(points[:,0].shape)
-#plt.triplot(points[:,0], points[:,1], tri.simplices.copy(), zorder=2)
-
-plt.scatter(points[:,0], points[:,1], zorder=2)
-plt.imshow(img, cmap = "gray", zorder=1)
-plt.show()
-
-
-print(type(img))
+# print(type(tri))
+# print(tri.simplices[0])
+# print("delaunay",(time.time() - t) * 1000)
+# print(points[tri.simplices[5]])
+#
+# f = plt.figure()
+# f.add_subplot(1,2,1)
+# plt.imshow(edges, cmap = 'gray')
+# f.add_subplot(1,2,2)
+# plt.imshow(gr_img, cmap = 'gray')
+# plt.show()
+#
+# print(edges[0][0])
+#
+# print(points[:,0].shape)
+# #plt.triplot(points[:,0], points[:,1], tri.simplices.copy(), zorder=2)
+#
+# plt.scatter(points[:,0], points[:,1], zorder=2)
+# plt.imshow(img, cmap = "gray", zorder=1)
+# plt.show()
+#
+#
+# print(type(img))
 
 """
 Workflow:
