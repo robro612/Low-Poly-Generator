@@ -89,18 +89,21 @@ class LowPolyGenerator():
                 elif random.random() < noiseProbability:
                     nodes.append((col, row))
         # removes nodes in nodeSampleDistanceThreshold distance
+        # CURRENTLY TESTING
+        print(len(nodes))
         i = 0
         count = 0
-        threshold = 2
+        threshold = 20
         while i < len(nodes):
             j = i + 1
             while j < len(nodes):
-                if random.random() > .99 and LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
+                if random.random() > 0 and LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
                     count += 1
                     nodes.pop(j)
                 else:
                     j += 1
             if i % 100 == 0:
+                print(i)
             i += 1
         print(f"{count} nodes were within {threshold} of each other")
         # adds the corners to ensure the complete space
@@ -155,8 +158,6 @@ class LowPolyGenerator():
             print(f"Time to generate: {end-start}")
         return self.triangles, self.delaunay, self.image, self.path
 
-lowPolyGenerator = LowPolyGenerator("/Users/rohanmjha/Desktop/College/15-112/term-project/images/nico.jpg")
-
 def draw(canvas, width, height, triangles, nodes):
     canvas.create_rectangle(0,0, width, height, fill = "black")
     for simplex in triangles:
@@ -180,7 +181,7 @@ def runDrawing(lowPolyGenerator):
     root.mainloop()
     print("bye!")
 
-path = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/nico.jpg"
+path = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/originalProfile.jpg"
 lowPolyGenerator = LowPolyGenerator(path)
 lowPolyGenerator.generateTriangulation()
 runDrawing(lowPolyGenerator)
