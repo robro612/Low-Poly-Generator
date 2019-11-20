@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.image import imread
 from scipy.spatial import Delaunay
 from tkinter import *
-import cv2, random, time
+import cv2, random, time, os
 # Uses numpy for storage of images
 # matplot lib to plot intermediate renders of edge detected nodes
 # and triangle vertices as well as load jpegs as image ndarrays
@@ -182,8 +182,8 @@ def runDrawing(lowPolyGenerator):
     lowPolyGenerator.nodes)
     root.mainloop()
     print("bye!")
-
-path = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/lionRoar.jpg"
+fileName = "lionRoar.jpg"
+path = os.getcwd() + "/images/" + fileName
 lowPolyGenerator = LowPolyGenerator(path)
 lowPolyGenerator.generateTriangulation()
 runDrawing(lowPolyGenerator)
