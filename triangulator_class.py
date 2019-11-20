@@ -45,6 +45,8 @@ class LowPolyGenerator():
     # filter for increased edge detection
     def preProcessImage(self):
         message = ""
+        # dot product for grayscale from
+        # https://stackoverflow.com/questions/41971663/use-numpy-to-convert-rgb-pixel-array-into-grayscale
         preProcessed = np.dot(self.image[:, :, :3], [0.3, 0.6, 0.1])
         message += "Converting to grayscale \n"
         if self.blurSize > 0:
@@ -53,8 +55,7 @@ class LowPolyGenerator():
             message += \
             f"Blurring with a normalized box filter of size {self.blurSize} \n"
         else:
-            preProcessed = cv2.blur(self.image,
-            (1, 1))
+            preProcessed = cv2.blur(self.image, (1, 1))
         if self.sharpen:
             preProcessed = cv2.filter2D(preProcessed, -1,
             kernel = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]]))
@@ -182,7 +183,7 @@ def runDrawing(lowPolyGenerator):
     lowPolyGenerator.nodes)
     root.mainloop()
     print("bye!")
-fileName = "lionRoar.jpg"
+fileName = "originalProfile.jpg"
 path = os.getcwd() + "/images/" + fileName
 lowPolyGenerator = LowPolyGenerator(path)
 lowPolyGenerator.generateTriangulation()
