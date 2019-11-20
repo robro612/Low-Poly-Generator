@@ -25,7 +25,6 @@ class LowPolyGenerator():
         self.randomNoiseRate = randomNoiseRate
         self.verbose = verbose
         self.saveResults = saveResults
-        self.originalImage = self.loadImage()
         self.image = self.loadImage()
 
     #Loads image using matplotlib's imread method
@@ -120,11 +119,24 @@ class LowPolyGenerator():
         return "#%02x%02x%02x" % (red, green, blue)
 
     # uses scipy's implementation of Delaunay triangulation
-    def triangulate(self, nodes):
-        delaunay = Delaunay(nodes)
+    def triangulate(self):
+        delaunay = Delaunay(self.nodes)
         simplices = delaunay.simplices
         triangles = dict()
         # iterates for each pair of three vertices of a given triangle
         for simplex in simplices:
             triangles[simplex] = self.rgbString(self.getAverageColor(simplex))
         return triangles, delaunay
+
+    # Wrapper method call that returns all relevant information including
+    # triangle dict that defines lowPoly image, delaunay object for new changes,
+    # and the original image and its path
+    def generateTriangulation(self):
+        start = time.time()
+        self.preProcessed = self.preProcessImage()
+        self.nodes = self.edgeDetection()
+        self.triangles, self.delaunay = self.triangulate()
+        end = time.time()
+        if self.verbose:
+            print(f"Time to generate: {end-start}")
+        return self.triangles, self.delaunay, self.image, self.path
