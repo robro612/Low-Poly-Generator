@@ -14,8 +14,8 @@ import cv2, random, time, os
 # time to test runtime during testing
 
 class LowPolyGenerator():
-    def __init__(self, imagePath, blurSize=5, sharpen=True,
-                nodeSampleDistanceThreshold=10, randomNoiseRate=300,
+    def __init__(self, imagePath, blurSize=3, sharpen=True,
+                nodeSampleDistanceThreshold=200, randomNoiseRate=6000,
                 cannyLow=50, cannyHigh=100, verbose=False,
                 saveResults=False):
         self.path = imagePath
@@ -84,7 +84,7 @@ class LowPolyGenerator():
         (canny.shape[0]*canny.shape[1])
         for row in range(canny.shape[0]):
             for col in range(canny.shape[1]):
-                if canny[row, col] == 255 and random.random() < 2500000/(self.image.shape[0]*self.image.shape[1]):
+                if random.random() < 0.0001 and canny[row, col] == 255:
                     nodes.append((col, row))
                 elif random.random() < noiseProbability:
                     nodes.append((col, row))
@@ -93,17 +93,20 @@ class LowPolyGenerator():
         print(len(nodes))
         i = 0
         count = 0
+        start = time.time()
         threshold = self.nodeSampleDistanceThreshold
         while i < len(nodes):
             j = i + 1
             while j < len(nodes):
-                if random.random() > .5 and \
+                if random.random() > .99 and \
                 LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
                     count += 1
                     nodes.pop(j)
                 else:
                     j += 1
             if i % 100 == 0:
+                print(time.time() - start)
+                start = time.time()
                 print(i)
             i += 1
         print(f"{count} nodes were within {threshold} of each other")
@@ -159,7 +162,7 @@ class LowPolyGenerator():
             print(f"Time to generate: {end-start}")
         return self.triangles, self.delaunay, self.image, self.path
 
-# Test F
+# Test Functions
 
 def draw(canvas, width, height, triangles, nodes):
     canvas.create_rectangle(0,0, width, height, fill = "black")
@@ -183,7 +186,7 @@ def runDrawing(lowPolyGenerator):
     lowPolyGenerator.nodes)
     root.mainloop()
     print("bye!")
-fileName = "originalProfile.jpg"
+fileName = "rafaCompare.jpg"
 path = os.getcwd() + "/images/" + fileName
 lowPolyGenerator = LowPolyGenerator(path)
 lowPolyGenerator.generateTriangulation()
