@@ -16,8 +16,7 @@ import cv2, random, time, os
 class LowPolyGenerator():
     def __init__(self, imagePath, blurSize=3, sharpen=True,
                 nodeSampleDistanceThreshold=200, randomNoiseRate=6000,
-                cannyLow=50, cannyHigh=100, verbose=False,
-                saveResults=False):
+                cannyLow=50, cannyHigh=100):
         self.path = imagePath
         self.blurSize = blurSize
         self.sharpen = sharpen
@@ -25,8 +24,6 @@ class LowPolyGenerator():
         self.randomNoiseRate = randomNoiseRate
         self.cannyLow = cannyLow
         self.cannyHigh = cannyHigh
-        self.verbose = verbose
-        self.saveResults = saveResults
         self.image = self.loadImage()
 
     #Loads image using matplotlib's imread method
@@ -36,32 +33,22 @@ class LowPolyGenerator():
         except:
             print("Image was not found in directory")
             return
-        if self.verbose:
-            fileName = self.path.split("/")[-1]
-            print(f"Loading Image: {fileName}")
         return image
 
     # preprocesses image using grayscale and blur for speed, and a sharpen
     # filter for increased edge detection
     def preProcessImage(self):
-        message = ""
         # dot product for grayscale from
         # https://stackoverflow.com/questions/41971663/use-numpy-to-convert-rgb-pixel-array-into-grayscale
         preProcessed = np.dot(self.image[:, :, :3], [0.3, 0.6, 0.1])
-        message += "Converting to grayscale \n"
         if self.blurSize > 0:
             preProcessed = cv2.blur(self.image,
             (self.blurSize, self.blurSize))
-            message += \
-            f"Blurring with a normalized box filter of size {self.blurSize} \n"
         else:
             preProcessed = cv2.blur(self.image, (1, 1))
         if self.sharpen:
             preProcessed = cv2.filter2D(preProcessed, -1,
             kernel = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]]))
-            message += "Sharpening \n"
-        if self.verbose:
-            print(message)
         # print("BRUH", preProcessed.shape, preProcessed)
         return preProcessed
 
@@ -117,6 +104,7 @@ class LowPolyGenerator():
                 nodes.append(point)
         return nodes, canny
 
+    #returns the rgb tuple of the center-of-mass pixel in the triangle
     def getAverageColor(self, simplex):
         # each simplex is a three-list of the indices of points from the passed
         # point array that make a given triangle
@@ -158,12 +146,10 @@ class LowPolyGenerator():
         self.nodes, self.canny = self.edgeDetection()
         self.triangles, self.delaunay = self.triangulate()
         end = time.time()
-        if self.verbose:
-            print(f"Time to generate: {end-start}")
+        print(f"Time to generate: {end-start}")
         return self.triangles, self.delaunay, self.image, self.path
 
 # Test Functions
-
 def draw(canvas, width, height, triangles, nodes):
     canvas.create_rectangle(0,0, width, height, fill = "black")
     for simplex in triangles:
@@ -186,14 +172,17 @@ def runDrawing(lowPolyGenerator):
     lowPolyGenerator.nodes)
     root.mainloop()
     print("bye!")
-fileName = "rafaCompare.jpg"
-path = os.getcwd() + "/images/" + fileName
-lowPolyGenerator = LowPolyGenerator(path)
-lowPolyGenerator.generateTriangulation()
-runDrawing(lowPolyGenerator)
 
-plt.imshow(lowPolyGenerator.canny)
-plt.show()
-print(" ratio of pixels to triangles: ",
-(lowPolyGenerator.image.shape[0]*lowPolyGenerator.image.shape[1]) / \
-len(lowPolyGenerator.triangles))
+TEST = False
+if TEST == False:
+    fileName = "rafaCompare.jpg"
+    path = os.getcwd() + "/images/" + fileName
+    lowPolyGenerator = LowPolyGenerator(path)
+    lowPolyGenerator.generateTriangulation()
+    runDrawing(lowPolyGenerator)
+
+    plt.imshow(lowPolyGenerator.canny)
+    plt.show()
+    print(" ratio of pixels to triangles: ",
+    (lowPolyGenerator.image.shape[0]*lowPolyGenerator.image.shape[1]) / \
+    len(lowPolyGenerator.triangles))

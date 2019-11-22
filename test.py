@@ -2,7 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.image import imread
 from scipy.spatial import Delaunay
+from cmu_112_graphics import *
 from tkinter import *
+from PIL import Image
 import cv2, random, time, os
 
 
@@ -14,7 +16,7 @@ def plot(filepath):
 
 
 
-file = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/nico.jpg"
+file = "/Users/rohanmjha/Desktop/College/15-112/term-project/images/rafa.jpg"
 
 g = file.split("/")[-1]
 
@@ -95,20 +97,23 @@ def rgbString(red, green, blue):
 
 # Tkinter grpahics starter from
 # http://www.cs.cmu.edu/~112/notes/notes-graphics-part1.html
+
+
 def draw(canvas, width, height):
-    canvas.create_rectangle(0,0, width, height, fill = "black")
-    for simplex in tri.simplices:
-        vertices = [points[i] for i in simplex]
-        xys = [(arr[0], arr[1]) for arr in vertices]
-        x0,y0 = xys[0][0],xys[0][1]
-        x1,y1 = xys[1][0],xys[1][1]
-        x2,y2 = xys[2][0],xys[2][1]
-        color = getAverageTriangleColor(simplex, points, img)
-        red, green, blue = color
-        colorString = rgbString(red, green, blue)
-        #print("BRUH", colorString)
-        canvas.create_polygon(x0,y0,x1,y1,x2,y2, fill = colorString,
-        width = 0) #add outline = colorString to get rid of thin black outlines
+    canvas.create_rectangle(0,0, width, height, fill = "blue")
+    canvas.create_image(width//2, height//2, image = ImageTk.PhotoImage(pilImage))
+    # for simplex in tri.simplices:
+    #     vertices = [points[i] for i in simplex]
+    #     xys = [(arr[0], arr[1]) for arr in vertices]
+    #     x0,y0 = xys[0][0],xys[0][1]
+    #     x1,y1 = xys[1][0],xys[1][1]
+    #     x2,y2 = xys[2][0],xys[2][1]
+    #     color = getAverageTriangleColor(simplex, points, img)
+    #     red, green, blue = color
+    #     colorString = rgbString(red, green, blue)
+    #     #print("BRUH", colorString)
+    #     canvas.create_polygon(x0,y0,x1,y1,x2,y2, fill = colorString,
+    #     width = 0) #add outline = colorString to get rid of thin black outlines
 
 def runDrawing(width=img.shape[1], height=img.shape[0]):
     root = Tk()
@@ -117,6 +122,7 @@ def runDrawing(width=img.shape[1], height=img.shape[0]):
     canvas.configure(bd=0, highlightthickness=0)
     canvas.pack()
     draw(canvas, width, height)
+    pilImage = Image.open(file)
     root.mainloop()
     print("bye!")
 

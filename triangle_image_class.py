@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from matplotlib.image import imread
 from scipy.spatial import Delaunay
 from tkinter import *
+from cmu_112_graphics import *
+from PIL import Image
 import cv2, random, time
 # DELETE LIBRARIES NOT NEEDED IN THIS FILE
 
@@ -11,10 +13,11 @@ import cv2, random, time
 # rather than trying to animate real time every vertex and such
 
 class LowPolyImage:
-    def __init__(self, image, path, triangles):
-        self.image = image
+    def __init__(self, generator, path):
+        self.lowPolyGenerator = generator
+        self.pilImage = Image.open(path)
+        self.tkImage = ImageTk.PhotoImage(self.pilImage)
         self.path = path
-        self.triangles = triangles
-        self.trianglesImage = None
-    def drawImage(self, x, y, longestSide):
-        currentLongestSide = max(self.image.shape)
+        self.triangles = self.lowPolyGenerator.triangles
+    def drawImage(self, canvas, x, y):
+        canvas.create_image(x, y, image = self.tkImage)
