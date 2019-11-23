@@ -15,7 +15,7 @@ import cv2, random, time, os
 
 class LowPolyGenerator():
     def __init__(self, imagePath, blurSize=3, sharpen=True,
-                nodeSampleDistanceThreshold=200, randomNoiseRate=6000,
+                nodeSampleDistanceThreshold=50, randomNoiseRate=4000,
                 cannyLow=50, cannyHigh=100):
         self.path = imagePath
         self.blurSize = blurSize
@@ -71,7 +71,7 @@ class LowPolyGenerator():
         (canny.shape[0]*canny.shape[1])
         for row in range(canny.shape[0]):
             for col in range(canny.shape[1]):
-                if random.random() < 0.0001 and canny[row, col] == 255:
+                if random.random() < 0.01 and canny[row, col] == 255:
                     nodes.append((col, row))
                 elif random.random() < noiseProbability:
                     nodes.append((col, row))
@@ -85,7 +85,7 @@ class LowPolyGenerator():
         while i < len(nodes):
             j = i + 1
             while j < len(nodes):
-                if random.random() > .99 and \
+                if random.random() > .9 and \
                 LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
                     count += 1
                     nodes.pop(j)
@@ -174,15 +174,15 @@ def runDrawing(lowPolyGenerator):
     print("bye!")
 
 TEST = False
-if TEST == False:
-    fileName = "rafaCompare.jpg"
+if TEST:
+    fileName = "obama.jpg"
     path = os.getcwd() + "/images/" + fileName
     lowPolyGenerator = LowPolyGenerator(path)
     lowPolyGenerator.generateTriangulation()
     runDrawing(lowPolyGenerator)
 
     plt.imshow(lowPolyGenerator.canny)
-    plt.show()
+    #plt.show()
     print(" ratio of pixels to triangles: ",
     (lowPolyGenerator.image.shape[0]*lowPolyGenerator.image.shape[1]) / \
     len(lowPolyGenerator.triangles))
