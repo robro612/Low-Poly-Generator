@@ -17,7 +17,7 @@ class MyModalApp(ModalApp):
 
 class BridgeMode(Mode):
     def appStarted(self):
-        self.path = os.getcwd() + "/Images/obama.jpg"
+        self.path = os.getcwd() + "/Images/originalProfile.jpg"
         self.directory = os.getcwd()
         self.lowPolyGenerator = LowPolyGenerator(self.path)
         self.lowPolyGenerator.generateTriangulation()
@@ -35,8 +35,6 @@ class BridgeMode(Mode):
         print(directories)
 
 
-
-
     def drawTemplate(self, canvas):
         pass
 
@@ -44,6 +42,7 @@ class BridgeMode(Mode):
         self.lowPolyImage.drawImage(canvas, self.width//2, self.height//2)
         draw(canvas, self.width, self.height, self.lowPolyGenerator.triangles,
         self.lowPolyGenerator.nodes)
+        # poly image canvas saving from https://stackoverflow.com/questions/34777676/how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
         self.ps = canvas.postscript(colormode='color')
         img = Image.open(io.BytesIO(self.ps.encode('utf-8')))
         img.save('./Images/test.jpg')
