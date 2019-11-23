@@ -32,7 +32,9 @@ class BridgeMode(Mode):
                 files.append(file)
             elif not file.startswith("."):
                 directories.append(file)
-            print(directories)
+        print(directories)
+
+
 
 
     def drawTemplate(self, canvas):
@@ -42,14 +44,9 @@ class BridgeMode(Mode):
         self.lowPolyImage.drawImage(canvas, self.width//2, self.height//2)
         draw(canvas, self.width, self.height, self.lowPolyGenerator.triangles,
         self.lowPolyGenerator.nodes)
-        canvas.create_rectangle(0,0, 300, 300)
-        # file saving from https://stackoverflow.com/questions/34777676/how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
-        if self.ps == None:
-            self.ps = canvas.postscript(file = './Images/new.ps', colormode='color')
-            print(self.ps)
-            print("saved")
-            pix = fitz.Pixmap("./Images/new.ps")      # input.xxx: a file in any of the supported input formats
-            pix.writeImage('./Images/new.jpg')
+        self.ps = canvas.postscript(colormode='color')
+        img = Image.open(io.BytesIO(self.ps.encode('utf-8')))
+        img.save('./Images/test.jpg')
 
 
 
