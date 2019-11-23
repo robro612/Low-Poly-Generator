@@ -15,7 +15,7 @@ import cv2, random, time, os
 
 class LowPolyGenerator():
     def __init__(self, imagePath, blurSize=3, sharpen=True,
-                nodeSampleDistanceThreshold=30, randomNoiseRate=4000,
+                nodeSampleDistanceThreshold=10, randomNoiseRate=2000,
                 cannyLow=50, cannyHigh=100):
         self.path = imagePath
         self.blurSize = blurSize
