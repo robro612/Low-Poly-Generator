@@ -25,16 +25,18 @@ class LowPolyImage:
         draw(canvas, width, height, self.lowPolyGenerator.triangles,
         self.lowPolyGenerator.nodes)
 
-    def createThumbnail(self):
+    def createThumbnail(self, thumbnailSize):
         w, h = self.pilImage.size
-        app = ThumbnailRender(self, width = w, height = h)
+        app = ThumbnailRender(self, width = w, height = h,
+        thumbnailSize = self.thumbnailSize)
         app.quit()
 
 
 
 class ThumbnailRender(App):
-    def appStarted(self, lowPolyImage):
+    def appStarted(self, lowPolyImage, thumbnailSize):
         self.lowPolyImage = lowPolyImage
+        self.thumbnailSize = thumbnailSize
         self.timerDelay = 100
 
     def redrawAll(self, canvas):

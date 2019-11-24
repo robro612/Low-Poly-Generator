@@ -14,8 +14,8 @@ import cv2, random, time, os
 # time to test runtime during testing
 
 class LowPolyGenerator():
-    def __init__(self, imagePath, blurSize=3, sharpen=True,
-                nodeSampleDistanceThreshold=20, randomNoiseRate=200,
+    def __init__(self, imagePath, blurSize=5, sharpen=True,
+                nodeSampleDistanceThreshold=20, randomNoiseRate=500,
                 cannyLow=100, cannyHigh=500):
         self.path = imagePath
         self.blurSize = blurSize
@@ -71,7 +71,7 @@ class LowPolyGenerator():
         (canny.shape[0]*canny.shape[1])
         for row in range(canny.shape[0]):
             for col in range(canny.shape[1]):
-                if random.random() < 0.1 and canny[row, col] == 255:
+                if random.random() < 0.2 and canny[row, col] == 255:
                     nodes.append((col, row))
                 elif random.random() < noiseProbability:
                     nodes.append((col, row))
@@ -85,7 +85,7 @@ class LowPolyGenerator():
         while i < len(nodes):
             j = i + 1
             while j < len(nodes):
-                if random.random() < 0.8 and \
+                if random.random() < 0.1 and \
                 LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
                     count += 1
                     nodes.pop(j)
@@ -174,7 +174,7 @@ def runDrawing(lowPolyGenerator):
 
 TEST = False
 if TEST:
-    fileName = "nico.jpg"
+    fileName = "cmu.jpg"
     path = os.getcwd() + "/images/" + fileName
     lowPolyGenerator = LowPolyGenerator(path)
     lowPolyGenerator.generateTriangulation()
