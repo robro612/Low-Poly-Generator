@@ -50,7 +50,7 @@ class BridgeMode(Mode):
             Image.ANTIALIAS)
             thumbnails.append((thumbnail,file))
         self.thumbnails = directoryThumbnails + thumbnails
-        maxC = (self.width - self.previewSize)//self.thumbnailSize
+        maxC = (self.width - self.previewSize - 4*self.margin)//self.thumbnailSize
         self.thumbnailArray = [[None]*maxC for _ in range(len(self.thumbnails)//maxC + 1)]
         r,c = 0,0
         for i in range(len(self.thumbnails)):
@@ -90,8 +90,9 @@ class BridgeMode(Mode):
         outlineBlue = LowPolyGenerator.rgbString(38,101,203)
 
         canvas.create_rectangle(0,0, self.width, self.height, fill=backgroundColor)
-        availableLength = self.width - self.previewSize
-        canvas.create_line(self.width - self.previewSize, 0, self.width - 800, self.height)
+        availableLength = self.width - self.previewSize - 4*self.margin
+        canvas.create_line(self.width - self.previewSize, 0,
+        self.width - self.previewSize, self.height)
         maxC = availableLength//thumbnailSize
 
         r,c = 0,0
@@ -129,7 +130,8 @@ class BridgeMode(Mode):
             if c > maxC - 1:
                 r += 1
                 c = 0
-
+            canvas.create_text(self.width, self.height,
+            text=self.selectedFile, anchor="se", font="Arial 12", fill="white")
     def keyPressed(self, event):
         scrollDelta = 20
         thumbnailDelta = 10
