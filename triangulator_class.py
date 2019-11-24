@@ -15,8 +15,8 @@ import cv2, random, time, os
 
 class LowPolyGenerator():
     def __init__(self, imagePath, blurSize=3, sharpen=True,
-                nodeSampleDistanceThreshold=10, randomNoiseRate=2000,
-                cannyLow=50, cannyHigh=100):
+                nodeSampleDistanceThreshold=20, randomNoiseRate=200,
+                cannyLow=100, cannyHigh=500):
         self.path = imagePath
         self.blurSize = blurSize
         self.sharpen = sharpen
@@ -71,7 +71,7 @@ class LowPolyGenerator():
         (canny.shape[0]*canny.shape[1])
         for row in range(canny.shape[0]):
             for col in range(canny.shape[1]):
-                if random.random() < 0.05 and canny[row, col] == 255:
+                if random.random() < 0.1 and canny[row, col] == 255:
                     nodes.append((col, row))
                 elif random.random() < noiseProbability:
                     nodes.append((col, row))
@@ -85,13 +85,13 @@ class LowPolyGenerator():
         while i < len(nodes):
             j = i + 1
             while j < len(nodes):
-                if random.random() > .95 and \
+                if random.random() < 0.8 and \
                 LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
                     count += 1
                     nodes.pop(j)
                 else:
                     j += 1
-            if i % 100 == 0:
+            if i % 500 == 0:
                 print(time.time() - start)
                 start = time.time()
                 print(i)
@@ -151,13 +151,12 @@ class LowPolyGenerator():
 
 # Test Functions
 def draw(canvas, width, height, triangles, nodes):
-    canvas.create_rectangle(0,0, width, height, fill = "black")
     for simplex in triangles:
         x0,y0 = nodes[simplex[0]][0], nodes[simplex[0]][1]
         x1,y1 = nodes[simplex[1]][0], nodes[simplex[1]][1]
         x2,y2 = nodes[simplex[2]][0], nodes[simplex[2]][1]
         canvas.create_polygon(x0,y0,x1,y1,x2,y2, fill = triangles[simplex],
-        width = 0, outline = triangles[simplex])
+        width = 0)# outline = triangles[simplex])
         # add outline = triangles[simplex] to get rid of thin black outlines
 
 def runDrawing(lowPolyGenerator):
