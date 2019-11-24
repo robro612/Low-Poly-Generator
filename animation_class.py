@@ -20,31 +20,34 @@ class BridgeMode(Mode):
         self.scroll = 0
         self.margin = 10
         self.selected = (-1,-1)
+        self.selectedFile = ""
         self.previewSize = 800
         self.path = os.getcwd() + "/Images/catalina.jpg"
-        self.directory = os.getcwd()
+        self.directory = os.getcwd() + "/Images"
         self.thumbnailSize = 250
         self.lowPolyGenerator = LowPolyGenerator(self.path)
         self.lowPolyGenerator.generateTriangulation()
         self.lowPolyImage = LowPolyImage(self.lowPolyGenerator, self.path)
-        #self.lowPolyImage.createThumbnail(self.thumbnailSize)
         self.directoryList = self.generateFileGrid()
 
 
     def generateFileGrid(self):
         thumbnailSize = self.thumbnailSize
         files, directories = [],[]
-        path = self.directory + "/Images/"
+        path = self.directory
         for file in os.listdir(path):
             if file.endswith(".jpg"):
-                files.append(path + file)
+                files.append(path + "/" + file)
             elif not file.startswith("."):
                 directories.append(file)
-        directoryThumbnails = [("directory", path+dir) for dir in directories]
+        directoryThumbnails = [("directory", path + "/" + dir) for dir in directories]
+        backDirectory = "/".join(path.split("/")[:-1])
+        directoryThumbnails.insert(0, ("directory", backDirectory))
         thumbnails = []
         for file in files:
             thumbnail = Image.open(file)
-            thumbnail.thumbnail((self.thumbnailSize*0.8, self.thumbnailSize*0.8))
+            thumbnail.thumbnail((self.thumbnailSize*0.8, self.thumbnailSize*0.8),
+            Image.ANTIALIAS)
             thumbnails.append((thumbnail,file))
         self.thumbnails = directoryThumbnails + thumbnails
         maxC = (self.width - self.previewSize)//self.thumbnailSize
@@ -56,14 +59,8 @@ class BridgeMode(Mode):
             if c > maxC - 1:
                 r += 1
                 c = 0
-        for row in self.thumbnailArray:
-            for item in row:
-                if item != None:
-                    print(item[1][-10:], end = " | ")
-            print()
 
     def getRowCol(self, mx, my):
-
         for r in range(len(self.thumbnailArray)):
             for c in range(len(self.thumbnailArray[0])):
                 if my > r*self.thumbnailSize + (r+1)*self.margin - self.scroll and \
@@ -71,13 +68,17 @@ class BridgeMode(Mode):
                 mx > c*self.thumbnailSize + (c+1)*self.margin and \
                 mx < (c+1)*self.thumbnailSize + (c+2)*self.margin and \
                 self.thumbnailArray[r][c] != None:
-                    print(self.thumbnailArray[r][c][1])
                     return (r,c)
-        return self.selected
+        return (-1,-1)
 
     def mousePressed(self, event):
         print("click")
         self.selected = self.getRowCol(event.x, event.y)
+        r,c = self.selected
+        if (r,c) != (-1,-1):
+            self.selectedFile = self.thumbnailArray[r][c][1]
+            print("SELECTED: ", self.selectedFile)
+
 
     def drawGrid(self, canvas):
         thumbnailSize = self.thumbnailSize
@@ -119,6 +120,8 @@ class BridgeMode(Mode):
                 r*thumbnailSize + self.thumbnailSize//2 + self.thumbnailSize//4 + (r+1)*self.margin - self.scroll,
                 fill = folderIconColor)
             imgName = self.thumbnails[i][1].split("/")[-1]
+            if imgName == self.directory.split("/")[-2]:
+                imgName = ".."
             canvas.create_text(c*thumbnailSize + self.thumbnailSize//2 + (c+1)*self.margin,
             r*thumbnailSize + thumbnailSize - self.scroll - 5 + (r+1)*self.margin,
             text=imgName, anchor="s", font="Arial 12", fill=captionColor)
@@ -143,9 +146,6 @@ class BridgeMode(Mode):
             self.directoryList = self.generateFileGrid()
 
     def redrawAll(self, canvas):
-        #self.lowPolyImage.drawImage(canvas, self.width//2, self.height//2)
-        # #draw(canvas, self.width, self.height, self.lowPolyGenerator.triangles,
-        # self.lowPolyGenerator.nodes)
         self.drawGrid(canvas)
 
         # poly image canvas saving from https://stackoverflow.com/questions/34777676/how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
