@@ -9,7 +9,7 @@ from triangulator_class import *
 from PIL import Image
 import cv2, random, time, io
 
-class MyModalApp(ModalApp):
+class PolyBridge(ModalApp):
     def appStarted(self):
         self.drawMode = BridgeMode()
         self.setActiveMode(self.drawMode)
@@ -19,18 +19,17 @@ class BridgeMode(Mode):
     def appStarted(self):
         self.path = os.getcwd() + "/Images/catalina.jpg"
         self.directory = os.getcwd()
+        self.thumbnailSize = 250
         self.lowPolyGenerator = LowPolyGenerator(self.path)
         self.lowPolyGenerator.generateTriangulation()
         self.lowPolyImage = LowPolyImage(self.lowPolyGenerator, self.path)
-        #self.lowPolyImage.createThumbnail()
-        im = self.lowPolyImage.pilImage
-        im.thumbnail((250,250))
-        im.save('./Images/thumbnail.jpg')
-        self.ps = None
-        self.directoryList = self.generateFileGrid()
+        #self.lowPolyImage.createThumbnail(self.thumbnailSize)
+        self.directoryList = self.generateFileGrid(self.thumbnailSize)
+        self.scroll = 0
+        self.margin = 10
 
 
-    def generateFileGrid(self):
+    def generateFileGrid(self, thumbnailSize):
         files, directories = [],[]
         path = self.directory + "/Images/"
         for file in os.listdir(path):
@@ -38,37 +37,67 @@ class BridgeMode(Mode):
                 files.append(path + file)
             elif not file.startswith("."):
                 directories.append(file)
+        directoryThumbnails = [("directory", dir) for dir in directories]
         thumbnails = []
         for file in files:
             thumbnail = Image.open(file)
-            thumbnail.thumbnail((200,200))
+            thumbnail.thumbnail((self.thumbnailSize*0.8, self.thumbnailSize*0.8))
             thumbnails.append((thumbnail,file))
 
-        self.thumbnails = thumbnails
+        self.thumbnails = directoryThumbnails + thumbnails
 
     def drawTemplate(self, canvas):
-        canvas.create_rectangle(0,0, self.width, self.height, fill=LowPolyGenerator.rgbString(50,50,50))
-        availableLength = self.width - 500
-        maxC = availableLength//250
-        for r in range(self.height//250):
-            canvas.create_line(0, r*250, maxC*250, r*250)
-        for c in range(maxC + 1):
-            canvas.create_line(c*250, 0, c*250, self.height)
+        thumbnailSize = self.thumbnailSize
+        folderIconColor = LowPolyGenerator.rgbString(120,180,210)
+        captionColor = LowPolyGenerator.rgbString(180,180,180)
+        backgroundColor = LowPolyGenerator.rgbString(50,50,50)
+        darkerBackgroundColor = LowPolyGenerator.rgbString(38,38,38)
+
+        canvas.create_rectangle(0,0, self.width, self.height, fill=backgroundColor)
+        availableLength = self.width - 3*self.thumbnailSize
+        maxC = availableLength//thumbnailSize
+        # for r in range(len(self.thumbnails)):
+        #     canvas.create_line(0, r*thumbnailSize-self.scroll,
+        #      maxC*thumbnailSize, r*thumbnailSize-self.scroll)
+        # for c in range(maxC + 1):
+        #     canvas.create_line(c*thumbnailSize, 0-self.scroll,
+        #     c*thumbnailSize, self.height)
         r,c = 0,0
         for i in range(len(self.thumbnails)):
-            canvas.create_image(c*250 + 125, r*250 + 125, image=ImageTk.PhotoImage(self.thumbnails[i][0]))
+            canvas.create_rectangle(
+            c*thumbnailSize + (c+1)*self.margin,
+            r*thumbnailSize + (r+1)*self.margin - self.scroll,
+            c*thumbnailSize + self.thumbnailSize + (c+1)*self.margin,
+            r*thumbnailSize + self.thumbnailSize + (r+1)*self.margin - self.scroll,
+            fill = darkerBackgroundColor)
+            if self.thumbnails[i][1].endswith(".jpg"):
+                canvas.create_image(c*thumbnailSize + self.thumbnailSize//2 + (c+1)*self.margin,
+                r*thumbnailSize + self.thumbnailSize//2 - self.scroll + (r+1)*self.margin,
+                image=ImageTk.PhotoImage(self.thumbnails[i][0]))
+            else:
+                canvas.create_rectangle(
+                c*thumbnailSize + self.thumbnailSize//2 - self.thumbnailSize//4 + (c+1)*self.margin,
+                r*thumbnailSize + self.thumbnailSize//2 - self.thumbnailSize//4 + (r+1)*self.margin - self.scroll,
+                c*thumbnailSize + self.thumbnailSize//2 + self.thumbnailSize//4 + (c+1)*self.margin,
+                r*thumbnailSize + self.thumbnailSize//2 + self.thumbnailSize//4 + (r+1)*self.margin - self.scroll,
+                fill = folderIconColor)
             imgName = self.thumbnails[i][1].split("/")[-1]
-            canvas.create_text(c*250 + 125, r*250 + 250 - 5, text=imgName,
-            anchor="s", font="Arial 12",
-            fill=LowPolyGenerator.rgbString(180,180,180))
+            canvas.create_text(c*thumbnailSize + self.thumbnailSize//2 + (c+1)*self.margin,
+            r*thumbnailSize + thumbnailSize - self.scroll - 5 + (r+1)*self.margin,
+            text=imgName, anchor="s", font="Arial 12", fill=captionColor)
             c += 1
             if c > maxC - 1:
                 r += 1
                 c = 0
 
+    def keyPressed(self, event):
+        scrollDelta = 20
+        if event.key == "Down":
+            self.scroll += scrollDelta
+        if event.key == "Up":
+            self.scroll -= scrollDelta
+            self.scroll = max(self.scroll, 0)
 
-        # for i in range(len(self.thumbnails)):
-        #     canvas.create_image(i*250 + 75, 300, image = ImageTk.PhotoImage(self.thumbnails[i]))
 
     def redrawAll(self, canvas):
         #self.lowPolyImage.drawImage(canvas, self.width//2, self.height//2)
@@ -83,4 +112,4 @@ class BridgeMode(Mode):
 
 
 
-app = MyModalApp(width=1920, height=1080)
+app = PolyBridge(width=1920, height=1080)
