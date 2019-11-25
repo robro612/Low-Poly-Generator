@@ -122,6 +122,8 @@ class BridgeMode(Mode):
             elif os.path.isdir(self.selectedFile):
                 self.directory = self.selectedFile
                 self.generateFileGrid()
+                self.scroll = 0
+                self.selected = (-1,-1)
 
     def drawGrid(self, canvas):
         thumbnailSize = self.thumbnailSize
@@ -140,22 +142,22 @@ class BridgeMode(Mode):
         # Draws images, boxes, and captions
         r,c = 0,0
         for i in range(len(self.thumbnails)):
-            print(self.selected, (r,c))
             if (r,c) == self.selected:
                 boxColor = lighterBackgroundColor
                 outlineColor = outlineBlue
-                print("yay")
             else:
                 boxColor = darkerBackgroundColor
                 outlineColor = "black"
-                print("bleh")
             canvas.create_rectangle(
             c*thumbnailSize + (c+1)*self.margin,
             r*thumbnailSize + (r+1)*self.margin - self.scroll,
             c*thumbnailSize + self.thumbnailSize + (c+1)*self.margin,
             r*thumbnailSize + self.thumbnailSize + (r+1)*self.margin - self.scroll,
             fill = boxColor, outline = outlineColor)
-            if self.thumbnails[i][1].endswith(".jpg"):
+            if self.thumbnails[i][1].endswith(".jpg") or \
+            self.thumbnails[i][1].endswith(".JPG") or \
+            self.thumbnails[i][1].endswith(".jpeg") or \
+            self.thumbnails[i][1].endswith(".JPEG"):
                 canvas.create_image(c*thumbnailSize + self.thumbnailSize//2 + (c+1)*self.margin,
                 r*thumbnailSize + self.thumbnailSize//2 - self.scroll + (r+1)*self.margin,
                 image=ImageTk.PhotoImage(self.thumbnails[i][0]))
@@ -188,9 +190,11 @@ class BridgeMode(Mode):
             self.scroll = max(self.scroll, 0)
         elif event.key == "Left":
             self.thumbnailSize -= thumbnailDelta
+            self.scrollDelta = int(0.7*scrollDelta)
             self.directoryList = self.generateFileGrid()
         elif event.key == "Right":
             self.thumbnailSize += thumbnailDelta
+            self.scrollDelta = int(1.3*scrollDelta)
             self.directoryList = self.generateFileGrid()
         elif event.key == "g":
             self.previewSize += previewDelta
