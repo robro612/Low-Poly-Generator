@@ -48,7 +48,7 @@ class BridgeMode(Mode):
         self.selectedFile = ""
         self.previewSize = 600
         self.previewImage = None
-        self.thumbnailSize = self.previewSize//2
+        self.thumbnailSize = 3*self.previewSize//4
         self.path = os.getcwd() + "/Images/catalina.jpg"
         self.directory = os.getcwd() + "/Images"
         self.directoryList = self.generateFileGrid()
@@ -200,7 +200,6 @@ class BridgeMode(Mode):
             self.previewSize += previewDelta
             self.thumbnailSize = self.previewSize//2
             self.directoryList = self.generateFileGrid()
-
 
     def drawCols(self, canvas):
         for i in range(self.width//100):
