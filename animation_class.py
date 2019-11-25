@@ -48,7 +48,7 @@ class BridgeMode(Mode):
         self.selectedFile = ""
         self.previewSize = 600
         self.previewImage = None
-        self.thumbnailSize = 3*self.previewSize//4
+        self.thumbnailSize = 3*self.previewSize//5
         self.path = os.getcwd() + "/Images/catalina.jpg"
         self.directory = os.getcwd() + "/Images"
         self.directoryList = self.generateFileGrid()
@@ -64,7 +64,7 @@ class BridgeMode(Mode):
             file.endswith(".jpeg") or \
             file.endswith(".JPEG"):
                 files.append(path + "/" + file)
-            elif file.startswith(".b") or not file.startswith("."):
+            elif not file.startswith("."):
                 directories.append(file)
         directoryThumbnails = [("directory", path + "/" + dir) for dir in directories]
         backDirectory = "/".join(path.split("/")[:-1])
