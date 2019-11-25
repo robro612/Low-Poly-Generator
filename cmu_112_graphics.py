@@ -251,7 +251,7 @@ class App(object):
     # Implementation:
     ####################################
 
-    def __init__(app, width=300, height=300, x=0, y=0, title=None, autorun=True, mvcCheck=False, logDrawingCalls=True):
+    def __init__(app, width=300, height=300, x=0, y=0, title=None, autorun=True, mvcCheck=True, logDrawingCalls=True):
         app.winx, app.winy, app.width, app.height = x, y, width, height
         app.timerDelay = 100     # milliseconds
         app.mouseMovedDelay = 50 # ditto
@@ -389,7 +389,8 @@ class App(object):
             app.redrawAll(app._canvas)
             hash2 = getHash(app) if app._mvcCheck else None
             if (hash1 != hash2):
-                app._mvcViolation('you may not change the app state (the model) in redrawAll (the view)')
+                pass
+                #app._mvcViolation('you may not change the app state (the model) in redrawAll (the view)')
         finally:
             app._canvas.inRedrawAll = False
         app._canvas.update()

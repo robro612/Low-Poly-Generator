@@ -14,8 +14,8 @@ import cv2, random, time, os
 # time to test runtime during testing
 
 class LowPolyGenerator():
-    def __init__(self, imagePath, blurSize=7, sharpen=True,
-                nodeSampleDistanceThreshold=20, randomNoiseRate=100,
+    def __init__(self, imagePath, blurSize=3, sharpen=True,
+                nodeSampleDistanceThreshold=20, randomNoiseRate=1000,
                 cannyLow=100, cannyHigh=500):
         self.path = imagePath
         self.blurSize = blurSize
@@ -25,6 +25,10 @@ class LowPolyGenerator():
         self.cannyLow = cannyLow
         self.cannyHigh = cannyHigh
         self.image = self.loadImage()
+        ratio = max(self.image.shape)/800
+        w,h,r = self.image.shape
+        self.image = cv2.resize(self.image, dsize=(int(w*ratio), int(h*ratio)), interpolation=cv2.INTER_CUBIC)
+        print("BRUO", self.image.shape)
 
     #Loads image using matplotlib's imread method
     def loadImage(self):

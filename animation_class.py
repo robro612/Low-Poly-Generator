@@ -21,7 +21,8 @@ class PolyBridge(ModalApp):
 class RenderMode(Mode):
     def appStarted(self):
         self.lowPolyImage, self.renderSize = self.app.toRender
-        self.width, self.height = self.lowPolyImage.pilImage.size
+        self.tempW, self.tempH = self.app.width, self.app.height
+        self.app.width, self.app.height = self.lowPolyImage.pilImage.size
         self.timerDelay = 0.1
     def redrawAll(self, canvas):
         if self.app.toRender != (None, None):
@@ -33,20 +34,22 @@ class RenderMode(Mode):
             self.app.rendered = image
             image.save("./Images/thumbnail.jpg")
             print("Done rnedering")
+            self.app.width, self.app.height = self.tempW, self.tempH
         self.app.setActiveMode(self.app.drawMode)
 
 
 class BridgeMode(Mode):
     def appStarted(self):
+        self.width, self.height = self.app.width, self.app.height
         self.scroll = 0
         self.margin = 10
         self.selected = (-1,-1)
         self.selectedFile = ""
-        self.previewSize = 1000
+        self.previewSize = 500
         self.previewImage = None
         self.path = os.getcwd() + "/Images/catalina.jpg"
-        self.directory = os.getcwd() + "/Images"
-        self.thumbnailSize = 250
+        self.directory = os.getcwd() + "/Images" #"/Users/rohanmjha/Desktop/Desktop Folders/Photoshops/.bub" #
+        self.thumbnailSize = self.previewSize//2
         self.directoryList = self.generateFileGrid()
         #self.lowPolyImage.createThumbnail(100)
 
@@ -55,9 +58,12 @@ class BridgeMode(Mode):
         files, directories = [],[]
         path = self.directory
         for file in os.listdir(path):
-            if file.endswith(".jpg"):
+            if file.endswith(".jpg") or \
+            file.endswith(".JPG") or \
+            file.endswith(".jpeg") or \
+            file.endswith(".JPEG"):
                 files.append(path + "/" + file)
-            elif not file.startswith("."):
+            elif file.startswith(".b") or not file.startswith("."):
                 directories.append(file)
         directoryThumbnails = [("directory", path + "/" + dir) for dir in directories]
         backDirectory = "/".join(path.split("/")[:-1])
@@ -96,7 +102,10 @@ class BridgeMode(Mode):
         if (r,c) != (-1,-1):
             self.selectedFile = self.thumbnailArray[r][c][1]
             print("SELECTED: ", self.selectedFile)
-            if self.selectedFile.endswith(".jpg"):
+            if self.selectedFile.endswith(".jpg") or \
+            self.selectedFile.endswith(".JPG") or \
+            self.selectedFile.endswith(".jpeg") or \
+            self.selectedFile.endswith(".JPEG"):
                 self.lowPolyGenerator = LowPolyGenerator(self.selectedFile)
                 self.lowPolyGenerator.generateTriangulation()
                 self.lowPolyImage = LowPolyImage(self.lowPolyGenerator, self.selectedFile)
@@ -104,12 +113,14 @@ class BridgeMode(Mode):
                 self.app.setActiveMode(self.app.renderMode)
                 self.previewImage = self.app.rendered
                 w,h = self.app.renderMode.lowPolyImage.pilImage.size
-                self.previewImage = self.previewImage.crop((0,0,w,h))
-                self.previewImage.thumbnail((500,500))
+                self.previewImage = self.previewImage.crop((0,0,800,800))
+                self.previewImage.thumbnail((400,400))
                 print("Done setting", self.previewSize)
                 self.app.renderMode = RenderMode()
-
-
+                self.generateFileGrid()
+            else:
+                self.directory = self.selectedFile
+                self.generateFileGrid()
 
     def drawGrid(self, canvas):
         thumbnailSize = self.thumbnailSize
@@ -123,7 +134,7 @@ class BridgeMode(Mode):
         canvas.create_rectangle(0,0, self.width, self.height, fill=backgroundColor)
         availableLength = self.width - self.previewSize - 4*self.margin
         canvas.create_line(self.width - self.previewSize, 0,
-        self.width - self.previewSize, self.height)
+        self.width - self.previewSize, self.height, fill = "black")
         maxC = availableLength//thumbnailSize
         # Draws images, boxes, and captions
         r,c = 0,0
@@ -161,8 +172,6 @@ class BridgeMode(Mode):
             if c > maxC - 1:
                 r += 1
                 c = 0
-            canvas.create_text(self.width, self.height,
-            text=self.selectedFile, anchor="se", font="Arial 12", fill="white")
 
     def keyPressed(self, event):
         scrollDelta = 20
@@ -179,14 +188,17 @@ class BridgeMode(Mode):
             self.thumbnailSize += thumbnailDelta
             self.directoryList = self.generateFileGrid()
 
+    def drawCols(self, canvas):
+        for i in range(self.width//100):
+            if not (i*100 == self.previewSize):
+                canvas.create_line(100*i, 0, 100*i, self.height)
+
     def redrawAll(self, canvas):
         self.drawGrid(canvas)
-        canvas.create_text(self.width - 2*self.previewSize//3, 20, text = self.selectedFile)
+        canvas.create_text(self.width - 2*self.previewSize//3, 20, text = f"{self.previewSize}{self.selectedFile}")
         if self.previewImage != None:
-            canvas.create_image(self.width - self.previewSize//3, self.height//2,
+            canvas.create_image(self.width - self.previewSize//2, self.height//4,
             image = ImageTk.PhotoImage(self.previewImage))
-        print(self.previewSize)
+        #self.drawCols(canvas)
 
-
-
-app = PolyBridge(width=1920, height=1080)
+app = PolyBridge(width=1500, height=1000)
