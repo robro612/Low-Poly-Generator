@@ -27,25 +27,32 @@ class LowPolyImage:
 
     def createThumbnail(self, thumbnailSize):
         w, h = self.pilImage.size
-        app = ThumbnailRender(self, width = w, height = h,
-        thumbnailSize = self.thumbnailSize)
+        app = ThumbnailRender(width = w, height = h, lowPolyImage = self, thumbnailSize = thumbnailSize)
         app.quit()
 
 
 
 class ThumbnailRender(App):
-    def appStarted(self, lowPolyImage, thumbnailSize):
+    def appStarted(self, **kwargs):
+        print(kwargs)
+        self.timerDelay = 100
+        self.lowPolyImage = None
+        print("made")
+
+    def loadParams(self, lowPolyImage, thumbnailSize):
         self.lowPolyImage = lowPolyImage
         self.thumbnailSize = thumbnailSize
-        self.timerDelay = 100
+        print("loaded")
+        return self
 
     def redrawAll(self, canvas):
-        self.lowPolyImage.drawImage(canvas, self.width//2, self.height//2)
-        draw(canvas, self.width, self.height, self.lowPolyGenerator.triangles,
-        self.lowPolyGenerator.nodes)
-        # poly image canvas saving from https://stackoverflow.com/questions/34777676/how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
-        ps = canvas.postscript(colormode='color')
-        #print(self.ps)
-        image = Image.open(io.BytesIO(ps.encode('utf-8')))
-        image.save('./Images/thumbnail.jpg')
-        self.quit()
+        if self.lowPolyImage != None:
+            self.lowPolyImage.drawImage(canvas, self.width//2, self.height//2)
+            draw(canvas, self.width, self.height, self.lowPolyGenerator.triangles,
+            self.lowPolyGenerator.nodes)
+            # poly image canvas saving from https://stackoverflow.com/questions/34777676/how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
+            ps = canvas.postscript(colormode='color')
+            #print(self.ps)
+            image = Image.open(io.BytesIO(ps.encode('utf-8')))
+            image.save('./Images/thumbnail.jpg')
+            self.quit()

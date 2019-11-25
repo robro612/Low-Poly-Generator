@@ -14,8 +14,8 @@ import cv2, random, time, os
 # time to test runtime during testing
 
 class LowPolyGenerator():
-    def __init__(self, imagePath, blurSize=5, sharpen=True,
-                nodeSampleDistanceThreshold=20, randomNoiseRate=500,
+    def __init__(self, imagePath, blurSize=7, sharpen=True,
+                nodeSampleDistanceThreshold=20, randomNoiseRate=100,
                 cannyLow=100, cannyHigh=500):
         self.path = imagePath
         self.blurSize = blurSize
@@ -71,7 +71,7 @@ class LowPolyGenerator():
         (canny.shape[0]*canny.shape[1])
         for row in range(canny.shape[0]):
             for col in range(canny.shape[1]):
-                if random.random() < 0.2 and canny[row, col] == 255:
+                if random.random() < 0.1 and canny[row, col] == 255:
                     nodes.append((col, row))
                 elif random.random() < noiseProbability:
                     nodes.append((col, row))

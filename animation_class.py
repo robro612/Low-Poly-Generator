@@ -11,9 +11,30 @@ import cv2, random, time, io
 
 class PolyBridge(ModalApp):
     def appStarted(self):
-        self.drawMode = BridgeMode()
-        self.setActiveMode(self.drawMode)
         self.timerDelay = 100
+        self.toRender = (None, None)
+        self.rendered = None
+        self.drawMode = BridgeMode()
+        self.renderMode = RenderMode()
+        self.setActiveMode(self.drawMode)
+
+class RenderMode(Mode):
+    def appStarted(self):
+        self.lowPolyImage, self.renderSize = self.app.toRender
+        self.width, self.height = self.lowPolyImage.pilImage.size
+        self.timerDelay = 0.1
+    def redrawAll(self, canvas):
+        if self.app.toRender != (None, None):
+            self.lowPolyImage.drawImage(canvas, self.width, self.height)
+            # poly image canvas saving from https://stackoverflow.com/questions/34777676/
+            # how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
+            ps = canvas.postscript(colormode='color')
+            image = Image.open(io.BytesIO(ps.encode('utf-8')))
+            self.app.rendered = image
+            image.save("./Images/thumbnail.jpg")
+            print("Done rnedering")
+        self.app.setActiveMode(self.app.drawMode)
+
 
 class BridgeMode(Mode):
     def appStarted(self):
@@ -21,15 +42,13 @@ class BridgeMode(Mode):
         self.margin = 10
         self.selected = (-1,-1)
         self.selectedFile = ""
-        self.previewSize = 800
+        self.previewSize = 1000
+        self.previewImage = None
         self.path = os.getcwd() + "/Images/catalina.jpg"
         self.directory = os.getcwd() + "/Images"
         self.thumbnailSize = 250
-        self.lowPolyGenerator = LowPolyGenerator(self.path)
-        self.lowPolyGenerator.generateTriangulation()
-        self.lowPolyImage = LowPolyImage(self.lowPolyGenerator, self.path)
         self.directoryList = self.generateFileGrid()
-
+        #self.lowPolyImage.createThumbnail(100)
 
     def generateFileGrid(self):
         thumbnailSize = self.thumbnailSize
@@ -73,11 +92,23 @@ class BridgeMode(Mode):
 
     def mousePressed(self, event):
         print("click")
-        self.selected = self.getRowCol(event.x, event.y)
-        r,c = self.selected
+        r,c = self.getRowCol(event.x, event.y)
         if (r,c) != (-1,-1):
             self.selectedFile = self.thumbnailArray[r][c][1]
             print("SELECTED: ", self.selectedFile)
+            if self.selectedFile.endswith(".jpg"):
+                self.lowPolyGenerator = LowPolyGenerator(self.selectedFile)
+                self.lowPolyGenerator.generateTriangulation()
+                self.lowPolyImage = LowPolyImage(self.lowPolyGenerator, self.selectedFile)
+                self.app.toRender = (self.lowPolyImage, self.selectedFile)
+                self.app.setActiveMode(self.app.renderMode)
+                self.previewImage = self.app.rendered
+                w,h = self.app.renderMode.lowPolyImage.pilImage.size
+                self.previewImage = self.previewImage.crop((0,0,w,h))
+                self.previewImage.thumbnail((500,500))
+                print("Done setting", self.previewSize)
+                self.app.renderMode = RenderMode()
+
 
 
     def drawGrid(self, canvas):
@@ -94,7 +125,7 @@ class BridgeMode(Mode):
         canvas.create_line(self.width - self.previewSize, 0,
         self.width - self.previewSize, self.height)
         maxC = availableLength//thumbnailSize
-
+        # Draws images, boxes, and captions
         r,c = 0,0
         for i in range(len(self.thumbnails)):
             if (r,c) == self.selected:
@@ -132,6 +163,7 @@ class BridgeMode(Mode):
                 c = 0
             canvas.create_text(self.width, self.height,
             text=self.selectedFile, anchor="se", font="Arial 12", fill="white")
+
     def keyPressed(self, event):
         scrollDelta = 20
         thumbnailDelta = 10
@@ -149,11 +181,11 @@ class BridgeMode(Mode):
 
     def redrawAll(self, canvas):
         self.drawGrid(canvas)
-
-        # poly image canvas saving from https://stackoverflow.com/questions/34777676/how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
-        # self.ps = canvas.postscript(colormode='color')
-        # image = Image.open(io.BytesIO(self.ps.encode('utf-8')))
-        # image.save('./Images/poly.jpg')
+        canvas.create_text(self.width - 2*self.previewSize//3, 20, text = self.selectedFile)
+        if self.previewImage != None:
+            canvas.create_image(self.width - self.previewSize//3, self.height//2,
+            image = ImageTk.PhotoImage(self.previewImage))
+        print(self.previewSize)
 
 
 
