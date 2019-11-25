@@ -22,7 +22,7 @@ class RenderMode(Mode):
     def appStarted(self):
         self.lowPolyImage, self.renderSize = self.app.toRender
         self.tempW, self.tempH = self.app.width, self.app.height
-        self.app.width, self.app.height = self.lowPolyImage.pilImage.size
+        self.app.width, self.app.height = self.lowPolyImage.imageSize
         self.timerDelay = 0.1
     def redrawAll(self, canvas):
         if self.app.toRender != (None, None):
@@ -31,6 +31,7 @@ class RenderMode(Mode):
             # how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
             ps = canvas.postscript(colormode='color')
             image = Image.open(io.BytesIO(ps.encode('utf-8')))
+
             self.app.rendered = image
             image.save("./Images/thumbnail.jpg")
             print("Done rnedering")
@@ -45,11 +46,11 @@ class BridgeMode(Mode):
         self.margin = 10
         self.selected = (-1,-1)
         self.selectedFile = ""
-        self.previewSize = 500
+        self.previewSize = 600
         self.previewImage = None
-        self.path = os.getcwd() + "/Images/catalina.jpg"
-        self.directory = os.getcwd() + "/Images" #"/Users/rohanmjha/Desktop/Desktop Folders/Photoshops/.bub" #
         self.thumbnailSize = self.previewSize//2
+        self.path = os.getcwd() + "/Images/catalina.jpg"
+        self.directory = os.getcwd() + "/Images"
         self.directoryList = self.generateFileGrid()
         #self.lowPolyImage.createThumbnail(100)
 
@@ -71,7 +72,7 @@ class BridgeMode(Mode):
         thumbnails = []
         for file in files:
             thumbnail = Image.open(file)
-            thumbnail.thumbnail((self.thumbnailSize*0.8, self.thumbnailSize*0.8),
+            thumbnail.thumbnail((self.thumbnailSize*0.8, self.thumbnailSize*0.8), #magic number
             Image.ANTIALIAS)
             thumbnails.append((thumbnail,file))
         self.thumbnails = directoryThumbnails + thumbnails
@@ -99,6 +100,7 @@ class BridgeMode(Mode):
     def mousePressed(self, event):
         print("click")
         r,c = self.getRowCol(event.x, event.y)
+        self.selected = (r,c)
         if (r,c) != (-1,-1):
             self.selectedFile = self.thumbnailArray[r][c][1]
             print("SELECTED: ", self.selectedFile)
@@ -112,13 +114,12 @@ class BridgeMode(Mode):
                 self.app.toRender = (self.lowPolyImage, self.selectedFile)
                 self.app.setActiveMode(self.app.renderMode)
                 self.previewImage = self.app.rendered
-                w,h = self.app.renderMode.lowPolyImage.pilImage.size
-                self.previewImage = self.previewImage.crop((0,0,800,800))
-                self.previewImage.thumbnail((400,400))
+                self.previewImage = self.previewImage.crop((0,0,800,800)) #Magic Number
+                self.previewImage.thumbnail((400,400)) #Magic Number
                 print("Done setting", self.previewSize)
                 self.app.renderMode = RenderMode()
                 self.generateFileGrid()
-            else:
+            elif os.path.isdir(self.selectedFile):
                 self.directory = self.selectedFile
                 self.generateFileGrid()
 
@@ -139,12 +140,15 @@ class BridgeMode(Mode):
         # Draws images, boxes, and captions
         r,c = 0,0
         for i in range(len(self.thumbnails)):
+            print(self.selected, (r,c))
             if (r,c) == self.selected:
                 boxColor = lighterBackgroundColor
                 outlineColor = outlineBlue
+                print("yay")
             else:
                 boxColor = darkerBackgroundColor
                 outlineColor = "black"
+                print("bleh")
             canvas.create_rectangle(
             c*thumbnailSize + (c+1)*self.margin,
             r*thumbnailSize + (r+1)*self.margin - self.scroll,
@@ -176,17 +180,23 @@ class BridgeMode(Mode):
     def keyPressed(self, event):
         scrollDelta = 20
         thumbnailDelta = 10
+        previewDelta = 20
         if event.key == "Down":
             self.scroll += scrollDelta
-        if event.key == "Up":
+        elif event.key == "Up":
             self.scroll -= scrollDelta
             self.scroll = max(self.scroll, 0)
-        if event.key == "Left":
+        elif event.key == "Left":
             self.thumbnailSize -= thumbnailDelta
             self.directoryList = self.generateFileGrid()
-        if event.key == "Right":
+        elif event.key == "Right":
             self.thumbnailSize += thumbnailDelta
             self.directoryList = self.generateFileGrid()
+        elif event.key == "g":
+            self.previewSize += previewDelta
+            self.thumbnailSize = self.previewSize//2
+            self.directoryList = self.generateFileGrid()
+
 
     def drawCols(self, canvas):
         for i in range(self.width//100):

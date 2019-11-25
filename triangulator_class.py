@@ -25,9 +25,9 @@ class LowPolyGenerator():
         self.cannyLow = cannyLow
         self.cannyHigh = cannyHigh
         self.image = self.loadImage()
-        ratio = max(self.image.shape)/800
+        ratio = 800/max(self.image.shape)
         w,h,r = self.image.shape
-        self.image = cv2.resize(self.image, dsize=(int(w*ratio), int(h*ratio)), interpolation=cv2.INTER_CUBIC)
+        self.image = cv2.resize(self.image, dsize=(int(h*ratio), int(w*ratio)), interpolation=cv2.INTER_CUBIC)
         print("BRUO", self.image.shape)
 
     #Loads image using matplotlib's imread method

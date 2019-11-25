@@ -19,6 +19,7 @@ class LowPolyImage:
         self.pilImage = Image.open(path)
         self.tkImage = ImageTk.PhotoImage(self.pilImage)
         self.path = path
+        self.imageSize = self.lowPolyGenerator.image.shape[:-1]
         self.triangles = self.lowPolyGenerator.triangles
 
     def drawImage(self, canvas, width, height):
@@ -33,8 +34,7 @@ class LowPolyImage:
 
 
 class ThumbnailRender(App):
-    def appStarted(self, **kwargs):
-        print(kwargs)
+    def appStarted(self):
         self.timerDelay = 100
         self.lowPolyImage = None
         print("made")
