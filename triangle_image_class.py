@@ -37,12 +37,10 @@ class ThumbnailRender(App):
     def appStarted(self):
         self.timerDelay = 100
         self.lowPolyImage = None
-        print("made")
 
     def loadParams(self, lowPolyImage, thumbnailSize):
         self.lowPolyImage = lowPolyImage
         self.thumbnailSize = thumbnailSize
-        print("loaded")
         return self
 
     def redrawAll(self, canvas):

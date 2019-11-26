@@ -57,7 +57,7 @@ class RenderMode(Mode):
             self.app.rendered = image
             #image.save("./Images/thumbnail.jpg")
             self.app.width, self.app.height = self.tempW, self.tempH
-        self.app.setActiveMode(self.app.drawMode)
+        #self.app.setActiveMode(self.app.drawMode)
     def keyPressed(self, event):
         if event.key == "s":
             self.app.saveSnapshot()
@@ -270,7 +270,9 @@ class BridgeMode(Mode):
                 hashStr = str(hashStr)[-4:]
                 self.previewImage.save(f"./Saved/{name}Poly{hashStr}.jpg")
                 print("Saved")
-
+        elif event.key == ".":
+            self.showHidden = not self.showHidden
+            self.directoryList = self.generateFileGrid()
 
     def changeParameters(self):
         fig, ax = plt.subplots(figsize=(8.5, 3))
@@ -284,21 +286,29 @@ class BridgeMode(Mode):
         nodeSample = plt.axes([0.25, 0.8, 0.65, 0.03])
         nodeThreshold = plt.axes([0.25, 0.9, 0.65, 0.03])
         blurSize = \
-        Slider(blur, "Blur Size", valmin=1, valmax=25, valinit=3, valstep=2)
+        Slider(blur, "Blur Size", valmin=1, valmax=25,
+        valinit=self.app.blurSize, valstep=2)
         sharpen = \
-        Slider(sharpenAx, "Sharpen", valmin=0, valmax=1, valinit=1, valstep=1)
+        Slider(sharpenAx, "Sharpen", valmin=0, valmax=1,
+        valinit=int(self.app.sharpen), valstep=1)
         cannyLow = \
-        Slider(low, "Edge Low", valmin=1, valmax=1000, valinit=100, valstep=1)
+        Slider(low, "Edge Low", valmin=1, valmax=1000,
+        valinit=self.app.cannyLow, valstep=1)
         cannyHigh = \
-        Slider(high, "Edge High", slidermin=cannyLow, valmin=1, valmax=1000, valinit=500, valstep=1)
+        Slider(high, "Edge High", slidermin=cannyLow, valmin=1, valmax=1000,
+        valinit=self.app.cannyHigh, valstep=1)
         noiseRate = \
-        Slider(noise, "Noise Rate", valmin=0, valmax=10000, valinit=1000, valstep=100)
+        Slider(noise, "Noise Rate", valmin=0, valmax=10000,
+        valinit=self.app.randomNoiseRate, valstep=100)
         nodeSampleDistanceThreshold = \
-        Slider(threshold, "Threshold distance", valmin=0, valmax=100, valinit=20, valstep=5)
+        Slider(threshold, "Threshold distance", valmin=0, valmax=100,
+        valinit=self.app.nodeSampleDistanceThreshold, valstep=5)
         nodeSampleRate = \
-        Slider(nodeSample, "Node Sample Rate", valmin=0, valmax=1, valinit=0.1, valstep=0.01)
+        Slider(nodeSample, "Node Sample Rate", valmin=0, valmax=1,
+        valinit=self.app.nodeSampleRate, valstep=0.01)
         nodeThresholdRate = \
-        Slider(nodeThreshold, "Node Threshold Check Rate", valmin=0, valmax=1, valinit=0.2, valstep=0.01)
+        Slider(nodeThreshold, "Node Threshold Check Rate", valmin=0, valmax=1,
+        valinit=self.app.nodeThresholdRate, valstep=0.01)
         plt.show()
         self.app.blurSize = int(blurSize.val)
         self.app.sharpen = bool(sharpen.val)
