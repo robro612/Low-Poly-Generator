@@ -15,8 +15,11 @@ import cv2, random, time, os
 
 class LowPolyGenerator():
     def __init__(self, imagePath, blurSize=3, sharpen=True,
-                nodeSampleDistanceThreshold=20, randomNoiseRate=500,
-                cannyLow=100, cannyHigh=500):
+                nodeSampleDistanceThreshold=20, randomNoiseRate=1000,
+                cannyLow=100, cannyHigh=500, nodeSampleRate = 0.1,
+                nodeThresholdRate = 0.2):
+        self.nodeThresholdRate = nodeThresholdRate
+        self.nodeSampleRate = nodeSampleRate
         self.path = imagePath
         self.blurSize = blurSize
         self.sharpen = sharpen
@@ -71,13 +74,11 @@ class LowPolyGenerator():
         canny = cv2.Canny(self.preProcessed, self.cannyLow, self.cannyHigh)
         nodes = []
         threshold = self.nodeSampleDistanceThreshold
-        noiseProbability = self.randomNoiseRate / \
-        (canny.shape[0]*canny.shape[1])
         for row in range(canny.shape[0]):
             for col in range(canny.shape[1]):
-                if random.random() < 0.1 and canny[row, col] == 255:
+                if random.random() < self.nodeSampleRate and canny[row, col] == 255:
                     nodes.append((col, row))
-                elif random.random() < noiseProbability:
+                elif random.random() < self.randomNoiseRate/(canny.shape[1]*canny.shape[0]):
                     nodes.append((col, row))
         # removes nodes in nodeSampleDistanceThreshold distance
         # CURRENTLY TESTING
@@ -86,20 +87,21 @@ class LowPolyGenerator():
         count = 0
         start = time.time()
         threshold = self.nodeSampleDistanceThreshold
-        while i < len(nodes):
-            j = i + 1
-            while j < len(nodes):
-                if random.random() < 0.1 and \
-                LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
-                    count += 1
-                    nodes.pop(j)
-                else:
-                    j += 1
-            if i % 500 == 0:
-                #print(time.time() - start)
-                start = time.time()
-                #print(i)
-            i += 1
+        if threshold > 0:
+            while i < len(nodes):
+                j = i + 1
+                while j < len(nodes):
+                    if random.random() < self.nodeThresholdRate and \
+                    LowPolyGenerator.distance(nodes[i], nodes[j]) < threshold:
+                        count += 1
+                        nodes.pop(j)
+                    else:
+                        j += 1
+                if i % 500 == 0:
+                    #print(time.time() - start)
+                    start = time.time()
+                    #print(i)
+                i += 1
         #print(f"{count} nodes were within {threshold} of each other.")
         # adds the corners to ensure the complete space
         for point in [(0,0), (0,self.image.shape[0]), (0,self.image.shape[0]//2),
@@ -164,8 +166,7 @@ def draw(canvas, width, height, triangles, nodes):
         x1,y1 = nodes[simplex[1]][0], nodes[simplex[1]][1]
         x2,y2 = nodes[simplex[2]][0], nodes[simplex[2]][1]
         canvas.create_polygon(x0,y0,x1,y1,x2,y2, fill = triangles[simplex],
-        width = 0)# outline = triangles[simplex])
-        # add outline = triangles[simplex] to get rid of thin black outlines
+        width = 0, outline = triangles[simplex])
 
 def runDrawing(lowPolyGenerator):
     root = Tk()

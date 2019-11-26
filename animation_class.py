@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
 from matplotlib.image import imread
 from scipy.spatial import Delaunay
 from tkinter import *
@@ -7,13 +8,33 @@ from cmu_112_graphics import *
 from triangle_image_class import *
 from triangulator_class import *
 from PIL import Image, ImageChops
-import cv2, random, time, io
+import cv2, random, time, io, easygui
+
+class Button():
+    def __init__(self, x, y, width, height, color, text):
+        self.x, self.y = x, y
+        self.width, self.height = width, height
+        self.color = color
+        self.text = text
+    def draw(self, canvas):
+        canvas.create_rectangle(self.x - self.width//2, self.y - self.height//2,
+        self.x + self.width//2, self.y + self.height//2, fill=self.color)
+        canvas.create_text(self.x, self.y, text=self.text,
+        fill=LowPolyGenerator.rgbString(180,180,180), font="Arial 12")
 
 class PolyBridge(ModalApp):
     def appStarted(self):
         self.timerDelay = 100
         self.toRender = (None, None)
         self.rendered = None
+        self.blurSize = 3
+        self.sharpen = True
+        self.cannyLow = 100
+        self.cannyHigh = 500
+        self.randomNoiseRate = 500
+        self.nodeSampleDistanceThreshold = 20
+        self.nodeSampleRate = 0.1
+        self.nodeThresholdRate = 0.2
         self.drawMode = BridgeMode()
         self.renderMode = RenderMode()
         self.setActiveMode(self.drawMode)
@@ -37,7 +58,11 @@ class RenderMode(Mode):
             #image.save("./Images/thumbnail.jpg")
             self.app.width, self.app.height = self.tempW, self.tempH
         self.app.setActiveMode(self.app.drawMode)
-
+    def keyPressed(self, event):
+        if event.key == "s":
+            self.app.saveSnapshot()
+        else:
+            self.app.setActiveMode(self.app.drawMode)
 
 class BridgeMode(Mode):
     def appStarted(self):
@@ -46,11 +71,14 @@ class BridgeMode(Mode):
         self.margin = 20
         self.selected = (-1,-1)
         self.selectedFile = ""
-        self.previewSize = 800
+        self.previewSize = 700
         self.previewImage = None
-        self.thumbnailSize = 2*self.previewSize//5
+        self.showHidden = False
+        self.thumbnailSize = (self.width - self.previewSize - 5*self.margin)//3
         self.directory = os.getcwd()
         self.directoryList = self.generateFileGrid()
+        self.button = Button(self.width - self.previewSize//2, self.height - 200,
+        200, 60, LowPolyGenerator.rgbString(78,78,78), "Change Parameters")
         #self.lowPolyImage.createThumbnail(100)
 
     def generateFileGrid(self):
@@ -63,7 +91,7 @@ class BridgeMode(Mode):
             file.endswith(".jpeg") or \
             file.endswith(".JPEG"):
                 files.append(path + "/" + file)
-            elif file.startswith(".b") or not file.startswith("."):
+            elif self.showHidden or not file.startswith("."):
                 directories.append(file)
         directoryThumbnails = [("directory", path + "/" + dir) for dir in directories]
         backDirectory = "/".join(path.split("/")[:-1])
@@ -85,6 +113,15 @@ class BridgeMode(Mode):
                 r += 1
                 c = 0
 
+    def checkButtonClicks(self, mx, my):
+        if mx > self.button.x - self.button.width//2 and \
+        mx < self.button.x + self.button.width//2 and \
+        my > self.button.y - self.button.height//2 and \
+        my < self.button.y + self.button.height//2:
+            self.changeParameters()
+            return True
+        return False
+
     def getRowCol(self, mx, my):
         for r in range(len(self.thumbnailArray)):
             for c in range(len(self.thumbnailArray[0])):
@@ -105,7 +142,10 @@ class BridgeMode(Mode):
             return im.crop(bbox)
 
     def mousePressed(self, event):
-        r,c = self.getRowCol(event.x, event.y)
+        if self.checkButtonClicks(event.x, event.y):
+            r,c = self.selected
+        else:
+            r,c = self.getRowCol(event.x, event.y)
         self.selected = (r,c)
         if (r,c) != (-1,-1):
             self.selectedFile = self.thumbnailArray[r][c][1]
@@ -113,7 +153,13 @@ class BridgeMode(Mode):
             self.selectedFile.endswith(".JPG") or \
             self.selectedFile.endswith(".jpeg") or \
             self.selectedFile.endswith(".JPEG"):
-                self.lowPolyGenerator = LowPolyGenerator(self.selectedFile)
+                self.lowPolyGenerator = LowPolyGenerator(self.selectedFile,
+                blurSize=self.app.blurSize, sharpen=self.app.sharpen,
+                nodeSampleDistanceThreshold=self.app.nodeSampleDistanceThreshold,
+                randomNoiseRate=self.app.randomNoiseRate,
+                cannyLow=self.app.cannyLow, cannyHigh=self.app.cannyHigh,
+                nodeSampleRate=self.app.nodeSampleRate,
+                nodeThresholdRate=self.app.nodeThresholdRate)
                 self.lowPolyGenerator.generateTriangulation()
                 self.lowPolyImage = LowPolyImage(self.lowPolyGenerator, self.selectedFile)
                 self.app.toRender = (self.lowPolyImage, self.selectedFile)
@@ -208,6 +254,60 @@ class BridgeMode(Mode):
             self.previewSize += previewDelta
             self.thumbnailSize = self.previewSize//2
             self.directoryList = self.generateFileGrid()
+        elif event.key == "p":
+            self.changeParameters()
+        elif event.key == "s":
+            if self.previewImage != None:
+                name = self.selectedFile.split("/")[-1]
+                name = name.split(".")[0]
+                hashStr = hash((self.app.blurSize,
+                self.app.sharpen,
+                self.app.cannyLow,
+                self.app.cannyHigh,self.app.randomNoiseRate,
+                self.app.nodeSampleDistanceThreshold,
+                self.app.nodeSampleRate,
+                self.app.nodeThresholdRate))
+                hashStr = str(hashStr)[-4:]
+                self.previewImage.save(f"./Saved/{name}Poly{hashStr}.jpg")
+                print("Saved")
+
+
+    def changeParameters(self):
+        fig, ax = plt.subplots(figsize=(8.5, 3))
+        plt.axis('off')
+        high = plt.axes([0.25, 0.2, 0.65, 0.03])
+        low = plt.axes([0.25, 0.3, 0.65, 0.03])
+        blur = plt.axes([0.25, 0.4, 0.65, 0.03])
+        sharpenAx = plt.axes([0.25, 0.5, 0.65, 0.03])
+        noise = plt.axes([0.25, 0.6, 0.65, 0.03])
+        threshold = plt.axes([0.25, 0.7, 0.65, 0.03])
+        nodeSample = plt.axes([0.25, 0.8, 0.65, 0.03])
+        nodeThreshold = plt.axes([0.25, 0.9, 0.65, 0.03])
+        blurSize = \
+        Slider(blur, "Blur Size", valmin=1, valmax=25, valinit=3, valstep=2)
+        sharpen = \
+        Slider(sharpenAx, "Sharpen", valmin=0, valmax=1, valinit=1, valstep=1)
+        cannyLow = \
+        Slider(low, "Edge Low", valmin=1, valmax=1000, valinit=100, valstep=1)
+        cannyHigh = \
+        Slider(high, "Edge High", slidermin=cannyLow, valmin=1, valmax=1000, valinit=500, valstep=1)
+        noiseRate = \
+        Slider(noise, "Noise Rate", valmin=0, valmax=10000, valinit=1000, valstep=100)
+        nodeSampleDistanceThreshold = \
+        Slider(threshold, "Threshold distance", valmin=0, valmax=100, valinit=20, valstep=5)
+        nodeSampleRate = \
+        Slider(nodeSample, "Node Sample Rate", valmin=0, valmax=1, valinit=0.1, valstep=0.01)
+        nodeThresholdRate = \
+        Slider(nodeThreshold, "Node Threshold Check Rate", valmin=0, valmax=1, valinit=0.2, valstep=0.01)
+        plt.show()
+        self.app.blurSize = int(blurSize.val)
+        self.app.sharpen = bool(sharpen.val)
+        self.app.cannyLow = int(cannyLow.val)
+        self.app.cannyHigh = int(cannyHigh.val)
+        self.app.randomNoiseRate = int(noiseRate.val)
+        self.app.nodeSampleDistanceThreshold = int(nodeSampleDistanceThreshold.val)
+        self.app.nodeSampleRate = nodeSampleRate.val
+        self.app.nodeThresholdRate = nodeThresholdRate.val
 
     def drawCols(self, canvas):
         for i in range(self.width//100):
@@ -216,10 +316,12 @@ class BridgeMode(Mode):
 
     def redrawAll(self, canvas):
         self.drawGrid(canvas)
-        canvas.create_text(self.width - 2*self.previewSize//3, 20, text = f"{self.previewSize}{self.selectedFile}")
+        canvas.create_text(self.width - self.previewSize//2, 20,
+        text = f"{self.selectedFile}", font="Arial 12", fill="white")
         if self.previewImage != None:
             canvas.create_image(self.width - self.previewSize//2, self.height//3,
             image = ImageTk.PhotoImage(self.previewImage))
+        self.button.draw(canvas)
         #self.drawCols(canvas)
 
 app = PolyBridge(width=1500, height=1000)
