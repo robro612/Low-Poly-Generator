@@ -57,7 +57,7 @@ class RenderMode(Mode):
             self.app.rendered = image
             #image.save("./Images/thumbnail.jpg")
             self.app.width, self.app.height = self.tempW, self.tempH
-        #self.app.setActiveMode(self.app.drawMode)
+        self.app.setActiveMode(self.app.drawMode)
     def keyPressed(self, event):
         if event.key == "s":
             self.app.saveSnapshot()
