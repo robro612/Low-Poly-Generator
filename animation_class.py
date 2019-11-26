@@ -55,7 +55,6 @@ class RenderMode(Mode):
             image = Image.open(io.BytesIO(ps.encode('utf-8')))
 
             self.app.rendered = image
-            #image.save("./Images/thumbnail.jpg")
             self.app.width, self.app.height = self.tempW, self.tempH
         self.app.setActiveMode(self.app.drawMode)
     def keyPressed(self, event):
@@ -79,7 +78,6 @@ class BridgeMode(Mode):
         self.directoryList = self.generateFileGrid()
         self.button = Button(self.width - self.previewSize//2, self.height - 200,
         200, 60, LowPolyGenerator.rgbString(78,78,78), "Change Parameters")
-        #self.lowPolyImage.createThumbnail(100)
 
     def generateFileGrid(self):
         thumbnailSize = self.thumbnailSize
@@ -99,11 +97,11 @@ class BridgeMode(Mode):
         thumbnails = []
         for file in files:
             thumbnail = Image.open(file)
-            thumbnail.thumbnail((self.thumbnailSize*0.8, self.thumbnailSize*0.8), #magic number
+            thumbnail.thumbnail((self.thumbnailSize*0.8, self.thumbnailSize*0.8),
             Image.ANTIALIAS)
             thumbnails.append((thumbnail,file))
         self.thumbnails = directoryThumbnails + thumbnails
-        maxC = (self.width - self.previewSize - 4*self.margin)//self.thumbnailSize #magic number
+        maxC = (self.width - self.previewSize - 4*self.margin)//self.thumbnailSize
         self.thumbnailArray = [[None]*maxC for _ in range(len(self.thumbnails)//maxC + 1)]
         r,c = 0,0
         for i in range(len(self.thumbnails)):
@@ -332,6 +330,5 @@ class BridgeMode(Mode):
             canvas.create_image(self.width - self.previewSize//2, self.height//3,
             image = ImageTk.PhotoImage(self.previewImage))
         self.button.draw(canvas)
-        #self.drawCols(canvas)
 
 app = PolyBridge(width=1500, height=1000)
