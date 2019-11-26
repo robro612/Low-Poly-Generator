@@ -28,7 +28,7 @@ class LowPolyGenerator():
         ratio = 800/max(self.image.shape)
         w,h,r = self.image.shape
         self.image = cv2.resize(self.image, dsize=(int(h*ratio), int(w*ratio)), interpolation=cv2.INTER_CUBIC)
-        print("BRUO", self.image.shape)
+
 
     #Loads image using matplotlib's imread method
     def loadImage(self):
@@ -81,7 +81,7 @@ class LowPolyGenerator():
                     nodes.append((col, row))
         # removes nodes in nodeSampleDistanceThreshold distance
         # CURRENTLY TESTING
-        print(len(nodes))
+        # print(len(nodes))
         i = 0
         count = 0
         start = time.time()
@@ -96,11 +96,11 @@ class LowPolyGenerator():
                 else:
                     j += 1
             if i % 500 == 0:
-                print(time.time() - start)
+                #print(time.time() - start)
                 start = time.time()
-                print(i)
+                #print(i)
             i += 1
-        print(f"{count} nodes were within {threshold} of each other.")
+        #print(f"{count} nodes were within {threshold} of each other.")
         # adds the corners to ensure the complete space
         for point in [(0,0), (0,self.image.shape[0]), (0,self.image.shape[0]//2),
          (self.image.shape[1],0), (self.image.shape[1]//2,0),
@@ -142,7 +142,7 @@ class LowPolyGenerator():
         for simplex in simplices:
             r,g,b = self.getAverageColor(simplex)
             triangles[tuple(simplex)] = self.rgbString(r,g,b)
-        print(f"Comprised of {len(simplices)} triangles")
+        #print(f"Comprised of {len(simplices)} triangles")
         return triangles, delaunay
 
     # Wrapper method call that returns all relevant information including
@@ -154,7 +154,7 @@ class LowPolyGenerator():
         self.nodes, self.canny = self.edgeDetection()
         self.triangles, self.delaunay = self.triangulate()
         end = time.time()
-        print(f"Time to generate: {end-start}")
+        #print(f"Time to generate: {end-start}")
         return self.triangles, self.delaunay, self.image, self.path
 
 # Test Functions
@@ -178,7 +178,6 @@ def runDrawing(lowPolyGenerator):
     lowPolyGenerator.image.shape[0], lowPolyGenerator.triangles,
     lowPolyGenerator.nodes)
     root.mainloop()
-    print("bye!")
 
 TEST = False
 if TEST:
@@ -190,6 +189,6 @@ if TEST:
 
     plt.imshow(lowPolyGenerator.canny)
     plt.show()
-    print(" ratio of pixels to triangles: ",
-    (lowPolyGenerator.image.shape[0]*lowPolyGenerator.image.shape[1]) / \
-    len(lowPolyGenerator.triangles))
+    # print(" ratio of pixels to triangles: ",
+    # (lowPolyGenerator.image.shape[0]*lowPolyGenerator.image.shape[1]) / \
+    # len(lowPolyGenerator.triangles))
