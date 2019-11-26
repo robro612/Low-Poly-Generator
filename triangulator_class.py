@@ -15,7 +15,7 @@ import cv2, random, time, os
 
 class LowPolyGenerator():
     def __init__(self, imagePath, blurSize=3, sharpen=True,
-                nodeSampleDistanceThreshold=20, randomNoiseRate=1000,
+                nodeSampleDistanceThreshold=20, randomNoiseRate=500,
                 cannyLow=100, cannyHigh=500):
         self.path = imagePath
         self.blurSize = blurSize
@@ -102,8 +102,11 @@ class LowPolyGenerator():
             i += 1
         print(f"{count} nodes were within {threshold} of each other.")
         # adds the corners to ensure the complete space
-        for point in [(0,0), (0,self.image.shape[0]), (self.image.shape[1],0),
-        (self.image.shape[1], self.image.shape[0])]:
+        for point in [(0,0), (0,self.image.shape[0]), (0,self.image.shape[0]//2),
+         (self.image.shape[1],0), (self.image.shape[1]//2,0),
+        (self.image.shape[1], self.image.shape[0]),
+        (self.image.shape[1]//2, self.image.shape[0]),
+        (self.image.shape[1], self.image.shape[0]//2)]:
             if point not in nodes:
                 nodes.append(point)
         return nodes, canny

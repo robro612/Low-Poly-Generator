@@ -6,7 +6,7 @@ from tkinter import *
 from cmu_112_graphics import *
 from triangle_image_class import *
 from triangulator_class import *
-from PIL import Image
+from PIL import Image, ImageChops
 import cv2, random, time, io
 
 class PolyBridge(ModalApp):
@@ -22,7 +22,8 @@ class RenderMode(Mode):
     def appStarted(self):
         self.lowPolyImage, self.renderSize = self.app.toRender
         self.tempW, self.tempH = self.app.width, self.app.height
-        self.app.width, self.app.height = self.lowPolyImage.imageSize
+        self.app.height, self.app.width = self.lowPolyImage.imageSize
+        self.height, self.width = self.lowPolyImage.imageSize
         self.timerDelay = 0.1
     def redrawAll(self, canvas):
         if self.app.toRender != (None, None):
@@ -33,8 +34,7 @@ class RenderMode(Mode):
             image = Image.open(io.BytesIO(ps.encode('utf-8')))
 
             self.app.rendered = image
-            image.save("./Images/thumbnail.jpg")
-            print("Done rnedering")
+            #image.save("./Images/thumbnail.jpg")
             self.app.width, self.app.height = self.tempW, self.tempH
         self.app.setActiveMode(self.app.drawMode)
 
@@ -43,14 +43,13 @@ class BridgeMode(Mode):
     def appStarted(self):
         self.width, self.height = self.app.width, self.app.height
         self.scroll = 0
-        self.margin = 10
+        self.margin = 20
         self.selected = (-1,-1)
         self.selectedFile = ""
-        self.previewSize = 600
+        self.previewSize = 800
         self.previewImage = None
-        self.thumbnailSize = 3*self.previewSize//5
-        self.path = os.getcwd() + "/Images/catalina.jpg"
-        self.directory = os.getcwd() + "/Images"
+        self.thumbnailSize = 2*self.previewSize//5
+        self.directory = os.getcwd()
         self.directoryList = self.generateFileGrid()
         #self.lowPolyImage.createThumbnail(100)
 
@@ -64,7 +63,7 @@ class BridgeMode(Mode):
             file.endswith(".jpeg") or \
             file.endswith(".JPEG"):
                 files.append(path + "/" + file)
-            elif not file.startswith("."):
+            elif file.startswith(".b") or not file.startswith("."):
                 directories.append(file)
         directoryThumbnails = [("directory", path + "/" + dir) for dir in directories]
         backDirectory = "/".join(path.split("/")[:-1])
@@ -76,7 +75,7 @@ class BridgeMode(Mode):
             Image.ANTIALIAS)
             thumbnails.append((thumbnail,file))
         self.thumbnails = directoryThumbnails + thumbnails
-        maxC = (self.width - self.previewSize - 4*self.margin)//self.thumbnailSize
+        maxC = (self.width - self.previewSize - 4*self.margin)//self.thumbnailSize #magic number
         self.thumbnailArray = [[None]*maxC for _ in range(len(self.thumbnails)//maxC + 1)]
         r,c = 0,0
         for i in range(len(self.thumbnails)):
@@ -96,14 +95,20 @@ class BridgeMode(Mode):
                 self.thumbnailArray[r][c] != None:
                     return (r,c)
         return (-1,-1)
+    # whitespace cropping from from https://stackoverflow.com/questions/10615901/trim-whitespace-using-pil
+    def trim(self, im):
+        bg = Image.new(im.mode, im.size, im.getpixel((im.size[0]-1,im.size[1]-1)))
+        diff = ImageChops.difference(im, bg)
+        diff = ImageChops.add(diff, diff, 2.0, -100)
+        bbox = diff.getbbox()
+        if bbox:
+            return im.crop(bbox)
 
     def mousePressed(self, event):
-        print("click")
         r,c = self.getRowCol(event.x, event.y)
         self.selected = (r,c)
         if (r,c) != (-1,-1):
             self.selectedFile = self.thumbnailArray[r][c][1]
-            print("SELECTED: ", self.selectedFile)
             if self.selectedFile.endswith(".jpg") or \
             self.selectedFile.endswith(".JPG") or \
             self.selectedFile.endswith(".jpeg") or \
@@ -114,9 +119,9 @@ class BridgeMode(Mode):
                 self.app.toRender = (self.lowPolyImage, self.selectedFile)
                 self.app.setActiveMode(self.app.renderMode)
                 self.previewImage = self.app.rendered
-                self.previewImage = self.previewImage.crop((0,0,800,800)) #Magic Number
-                self.previewImage.thumbnail((400,400)) #Magic Number
-                print("Done setting", self.previewSize)
+                self.previewImage = self.trim(self.previewImage)
+                 #Magic Number
+                self.previewImage.thumbnail((500,500)) #Magic Number
                 self.app.renderMode = RenderMode()
                 self.generateFileGrid()
             elif os.path.isdir(self.selectedFile):
@@ -171,6 +176,8 @@ class BridgeMode(Mode):
             imgName = self.thumbnails[i][1].split("/")[-1]
             if imgName == self.directory.split("/")[-2]:
                 imgName = ".."
+            if len(imgName) > 2*thumbnailSize//12:
+                imgName = "..."+imgName[-15:]
             canvas.create_text(c*thumbnailSize + self.thumbnailSize//2 + (c+1)*self.margin,
             r*thumbnailSize + thumbnailSize - self.scroll - 5 + (r+1)*self.margin,
             text=imgName, anchor="s", font="Arial 12", fill=captionColor)
@@ -180,8 +187,8 @@ class BridgeMode(Mode):
                 c = 0
 
     def keyPressed(self, event):
-        scrollDelta = 20
-        thumbnailDelta = 10
+        scrollDelta = 40
+        thumbnailDelta = 20
         previewDelta = 20
         if event.key == "Down":
             self.scroll += scrollDelta
@@ -190,6 +197,7 @@ class BridgeMode(Mode):
             self.scroll = max(self.scroll, 0)
         elif event.key == "Left":
             self.thumbnailSize -= thumbnailDelta
+            self.thumbnailSize = max(self.thumbnailSize, 1)
             self.scrollDelta = int(0.7*scrollDelta)
             self.directoryList = self.generateFileGrid()
         elif event.key == "Right":
@@ -210,7 +218,7 @@ class BridgeMode(Mode):
         self.drawGrid(canvas)
         canvas.create_text(self.width - 2*self.previewSize//3, 20, text = f"{self.previewSize}{self.selectedFile}")
         if self.previewImage != None:
-            canvas.create_image(self.width - self.previewSize//2, self.height//4,
+            canvas.create_image(self.width - self.previewSize//2, self.height//3,
             image = ImageTk.PhotoImage(self.previewImage))
         #self.drawCols(canvas)
 
