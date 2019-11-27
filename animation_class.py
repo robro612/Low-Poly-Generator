@@ -8,7 +8,7 @@ from cmu_112_graphics import *
 from triangle_image_class import *
 from triangulator_class import *
 from PIL import Image, ImageChops
-import cv2, random, time, io, easygui
+import cv2, random, time, io
 
 class Button():
     def __init__(self, x, y, width, height, color, text):

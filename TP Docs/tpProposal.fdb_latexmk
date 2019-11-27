@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1574800945 "tpProposal.tex" "tpProposal.pdf" "tpProposal" 1574801565
+["pdflatex"] 1574800945 "tpProposal.tex" "tpProposal.pdf" "tpProposal" 1574810247
   "/usr/local/texlive/2019/texmf-dist/fonts/map/fontname/texfonts.map" 1511824771 3332 103109f5612ad95229751940c61aada0 ""
   "/usr/local/texlive/2019/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm" 1136768653 1324 c910af8c371558dc20f2d7822f66fe64 ""
   "/usr/local/texlive/2019/texmf-dist/fonts/tfm/public/cm/cmmi12.tfm" 1136768653 1524 4414a8315f39513458b80dfc63bff03a ""
@@ -52,6 +52,6 @@
   "tpProposal.aux" 1574800945 708 6af8644f77fbb579c8fa89578f315fd3 "pdflatex"
   "tpProposal.tex" 1574801565 6125 c82b1f9061539c2152cc63fa2f513720 ""
   (generated)
+  "tpProposal.log"
   "tpProposal.pdf"
   "tpProposal.aux"
-  "tpProposal.log"
