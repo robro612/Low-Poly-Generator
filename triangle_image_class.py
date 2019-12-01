@@ -7,7 +7,6 @@ from cmu_112_graphics import *
 from triangulator_class import *
 from PIL import Image
 import cv2, random, time, io
-# DELETE LIBRARIES NOT NEEDED IN THIS FILE
 
 # This class will hold the image, both in its triangulated and regular forms
 # and will have an option to save it as a scaleable static image from TK render
@@ -50,7 +49,6 @@ class ThumbnailRender(App):
             self.lowPolyGenerator.nodes)
             # poly image canvas saving from https://stackoverflow.com/questions/34777676/how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
             ps = canvas.postscript(colormode='color')
-            #print(self.ps)
             image = Image.open(io.BytesIO(ps.encode('utf-8')))
             image.save('./Images/thumbnail.jpg')
             self.quit()

@@ -16,11 +16,25 @@ class Button():
         self.width, self.height = width, height
         self.color = color
         self.text = text
+
     def draw(self, canvas):
         canvas.create_rectangle(self.x - self.width//2, self.y - self.height//2,
         self.x + self.width//2, self.y + self.height//2, fill=self.color)
         canvas.create_text(self.x, self.y, text=self.text,
         fill=LowPolyGenerator.rgbString(180,180,180), font="Arial 12")
+
+    def buttonFunction(self, app):
+        pass
+
+class ParametersButton(Button):
+    def buttonFunction(self, app):
+        app.changeParameters()
+
+class PathButton(Button):
+    def __init__(self, x, y, width, height, color, text, path):
+        super().__init__(x, y, width, height, color, text)
+        self.path = path
+
 
 class PolyBridge(ModalApp):
     def appStarted(self):
@@ -76,8 +90,13 @@ class BridgeMode(Mode):
         self.thumbnailSize = (self.width - self.previewSize - 5*self.margin)//3
         self.directory = os.getcwd()
         self.directoryList = self.generateFileGrid()
-        self.button = Button(self.width - self.previewSize//2, self.height - 200,
+        self.buttons = []
+        self.parametersButton = Button(self.width - self.previewSize//2, self.height - 200,
         200, 60, LowPolyGenerator.rgbString(78,78,78), "Change Parameters")
+        self.buttons.append(self.parametersButton)
+        # self.
+
+
 
     def generateFileGrid(self):
         thumbnailSize = self.thumbnailSize
@@ -112,12 +131,13 @@ class BridgeMode(Mode):
                 c = 0
 
     def checkButtonClicks(self, mx, my):
-        if mx > self.button.x - self.button.width//2 and \
-        mx < self.button.x + self.button.width//2 and \
-        my > self.button.y - self.button.height//2 and \
-        my < self.button.y + self.button.height//2:
-            self.changeParameters()
-            return True
+        for button in self.buttons:
+            if mx > button.x - button.width//2 and \
+            mx < button.x + button.width//2 and \
+            my > button.y - button.height//2 and \
+            my < button.y + button.height//2:
+                button.buttonFunction(self)
+                return True
         return False
 
     def getRowCol(self, mx, my):
@@ -266,8 +286,13 @@ class BridgeMode(Mode):
                 self.app.nodeSampleRate,
                 self.app.nodeThresholdRate))
                 hashStr = str(hashStr)[-4:]
+                try:
+                    os.mkdir(os.path() + "/Saved")
+                except:
+                    pass
                 self.previewImage.save(f"./Saved/{name}Poly{hashStr}.jpg")
                 print("Saved")
+                excep
         elif event.key == ".":
             self.showHidden = not self.showHidden
             self.directoryList = self.generateFileGrid()
