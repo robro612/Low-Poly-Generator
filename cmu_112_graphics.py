@@ -1,3 +1,7 @@
+
+# CMU graphics package from http://www.cs.cmu.edu/~112/notes/notes-animations-part2.html
+# Modified to allow for a crucial MVC violation
+
 # cmu_112_graphics.py
 # version 0.8.5
 

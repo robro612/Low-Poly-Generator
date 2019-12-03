@@ -34,8 +34,17 @@ class PathButton(Button):
     def __init__(self, x, y, width, height, color, text, path):
         super().__init__(x, y, width, height, color, text)
         self.path = path
+    def buttonFunction(self, app):
+        app.directory = self.path + "/" + self.text
+
+class SplashButton(Button):
+    def buttonFunction(self, app):
+        # file dialog from https://stackoverflow.com/questions/11295917/how-to-select-a-directory-and-store-the-location-using-tkinter-in-python
+        app.startPath = filedialog.askdirectory()
 
 
+# CMU graphics package from http://www.cs.cmu.edu/~112/notes/notes-animations-part2.html
+# Modified to allow for a crucial MVC violation
 class PolyBridge(ModalApp):
     def appStarted(self):
         self.timerDelay = 100
@@ -51,7 +60,27 @@ class PolyBridge(ModalApp):
         self.nodeThresholdRate = 0.2
         self.drawMode = BridgeMode()
         self.renderMode = RenderMode()
-        self.setActiveMode(self.drawMode)
+        self.splashScreenMode = SplashScreenMode()
+        self.setActiveMode(self.splashScreenMode)
+
+class SplashScreenMode(Mode):
+    def appStarted(self):
+        self.button = SplashButton(self.width//2, self.height//2, 100, 100, "red", "pick a path")
+        self.startPath = ""
+
+    def mousePressed(self, event):
+        mx, my = event.x, event.y
+        button = self.button
+        if mx > button.x - button.width//2 and \
+        mx < button.x + button.width//2 and \
+        my > button.y - button.height//2 and \
+        my < button.y + button.height//2:
+            button.buttonFunction(self)
+        if self.startPath != "":
+            self.app.setActiveMode(self.app.drawMode)
+
+    def redrawAll(self, canvas):
+        self.button.draw(canvas)
 
 class RenderMode(Mode):
     def appStarted(self):
@@ -80,28 +109,40 @@ class RenderMode(Mode):
 class BridgeMode(Mode):
     def appStarted(self):
         self.width, self.height = self.app.width, self.app.height
-        self.scroll = 0
+        self.scroll = -40
         self.margin = 20
         self.selected = (-1,-1)
         self.selectedFile = ""
-        self.previewSize = 700
+        self.previewSize = self.width//2
         self.previewImage = None
         self.showHidden = False
+        self.mousePosition = (None, None)
         self.thumbnailSize = (self.width - self.previewSize - 5*self.margin)//3
-        self.directory = os.getcwd()
+        self.directory = self.app.splashScreenMode.startPath
         self.directoryList = self.generateFileGrid()
-        self.buttons = []
-        self.parametersButton = Button(self.width - self.previewSize//2, self.height - 200,
-        200, 60, LowPolyGenerator.rgbString(78,78,78), "Change Parameters")
-        self.buttons.append(self.parametersButton)
-        # self.
+        self.parametersButton = ParametersButton(self.width - self.previewSize//2, self.height - 200, 200, 60, LowPolyGenerator.rgbString(78,78,78), "Change Parameters")
+        self.pathButtons = []
+        self.generateDirectoryButtons()
 
+    def generateDirectoryButtons(self):
+        self.pathButtons = []
+        split = self.directory.split("/")
+        for i in range(len(split)):
+            name = split[i]
+            if name != "":
+                self.pathButtons.append(PathButton(60 + (100 + 5)*len(self.pathButtons), 30, 100, 30, LowPolyGenerator.rgbString(78,78,78), name, "/".join(split[:i])))
+        while 105*len(self.pathButtons) > self.width - self.previewSize:
+            self.pathButtons.pop(0)
+            for button in self.pathButtons:
+                button.x -= 105
+        self.generateFileGrid()
 
 
     def generateFileGrid(self):
         thumbnailSize = self.thumbnailSize
         files, directories = [],[]
         path = self.directory
+
         for file in os.listdir(path):
             if file.endswith(".jpg") or \
             file.endswith(".JPG") or \
@@ -121,17 +162,20 @@ class BridgeMode(Mode):
             thumbnails.append((thumbnail,file))
         self.thumbnails = directoryThumbnails + thumbnails
         maxC = (self.width - self.previewSize - 4*self.margin)//self.thumbnailSize
-        self.thumbnailArray = [[None]*maxC for _ in range(len(self.thumbnails)//maxC + 1)]
-        r,c = 0,0
-        for i in range(len(self.thumbnails)):
-            self.thumbnailArray[r][c] = self.thumbnails[i]
-            c += 1
-            if c > maxC - 1:
-                r += 1
-                c = 0
+        try:
+            self.thumbnailArray = [[None]*maxC for _ in range(len(self.thumbnails)//maxC + 1)]
+            r,c = 0,0
+            for i in range(len(self.thumbnails)):
+                self.thumbnailArray[r][c] = self.thumbnails[i]
+                c += 1
+                if c > maxC - 1:
+                    r += 1
+                    c = 0
+        except:
+            pass
 
     def checkButtonClicks(self, mx, my):
-        for button in self.buttons:
+        for button in self.pathButtons + [self.parametersButton]:
             if mx > button.x - button.width//2 and \
             mx < button.x + button.width//2 and \
             my > button.y - button.height//2 and \
@@ -150,6 +194,7 @@ class BridgeMode(Mode):
                 self.thumbnailArray[r][c] != None:
                     return (r,c)
         return (-1,-1)
+
     # whitespace cropping from from https://stackoverflow.com/questions/10615901/trim-whitespace-using-pil
     def trim(self, im):
         bg = Image.new(im.mode, im.size, im.getpixel((im.size[0]-1,im.size[1]-1)))
@@ -185,14 +230,15 @@ class BridgeMode(Mode):
                 self.previewImage = self.app.rendered
                 self.previewImage = self.trim(self.previewImage)
                  #Magic Number
-                self.previewImage.thumbnail((500,500)) #Magic Number
+                self.previewImage.thumbnail((500,500))
                 self.app.renderMode = RenderMode()
                 self.generateFileGrid()
             elif os.path.isdir(self.selectedFile):
                 self.directory = self.selectedFile
                 self.generateFileGrid()
-                self.scroll = 0
+                self.scroll = -40
                 self.selected = (-1,-1)
+        self.generateDirectoryButtons()
 
     def drawGrid(self, canvas):
         thumbnailSize = self.thumbnailSize
@@ -223,20 +269,22 @@ class BridgeMode(Mode):
             c*thumbnailSize + self.thumbnailSize + (c+1)*self.margin,
             r*thumbnailSize + self.thumbnailSize + (r+1)*self.margin - self.scroll,
             fill = boxColor, outline = outlineColor)
-            if self.thumbnails[i][1].endswith(".jpg") or \
-            self.thumbnails[i][1].endswith(".JPG") or \
-            self.thumbnails[i][1].endswith(".jpeg") or \
-            self.thumbnails[i][1].endswith(".JPEG"):
+            suffixes = (".jpg", ".JPG", ".jpeg", "JPEG")
+            if self.thumbnails[i][1].endswith(suffixes):
                 canvas.create_image(c*thumbnailSize + self.thumbnailSize//2 + (c+1)*self.margin,
                 r*thumbnailSize + self.thumbnailSize//2 - self.scroll + (r+1)*self.margin,
                 image=ImageTk.PhotoImage(self.thumbnails[i][0]))
             else:
+                if os.path.isdir(self.thumbnails[i][1]):
+                    color = folderIconColor
+                else:
+                    color = "green"
                 canvas.create_rectangle(
                 c*thumbnailSize + self.thumbnailSize//2 - self.thumbnailSize//4 + (c+1)*self.margin,
                 r*thumbnailSize + self.thumbnailSize//2 - self.thumbnailSize//4 + (r+1)*self.margin - self.scroll,
                 c*thumbnailSize + self.thumbnailSize//2 + self.thumbnailSize//4 + (c+1)*self.margin,
                 r*thumbnailSize + self.thumbnailSize//2 + self.thumbnailSize//4 + (r+1)*self.margin - self.scroll,
-                fill = folderIconColor)
+                fill = color)
             imgName = self.thumbnails[i][1].split("/")[-1]
             if imgName == self.directory.split("/")[-2]:
                 imgName = ".."
@@ -258,7 +306,7 @@ class BridgeMode(Mode):
             self.scroll += scrollDelta
         elif event.key == "Up":
             self.scroll -= scrollDelta
-            self.scroll = max(self.scroll, 0)
+            self.scroll = max(self.scroll, -40)
         elif event.key == "Left":
             self.thumbnailSize -= thumbnailDelta
             self.thumbnailSize = max(self.thumbnailSize, 1)
@@ -292,7 +340,6 @@ class BridgeMode(Mode):
                     pass
                 self.previewImage.save(f"./Saved/{name}Poly{hashStr}.jpg")
                 print("Saved")
-                excep
         elif event.key == ".":
             self.showHidden = not self.showHidden
             self.directoryList = self.generateFileGrid()
@@ -347,6 +394,27 @@ class BridgeMode(Mode):
             if not (i*100 == self.previewSize):
                 canvas.create_line(100*i, 0, 100*i, self.height)
 
+    def checkParametersHover(self, event):
+        button = self.parametersButton
+        mx, my = event.x, event.y
+        if mx > button.x - button.width//2 and \
+        mx < button.x + button.width//2 and \
+        my > button.y - button.height//2 and \
+        my < button.y + button.height//2:
+            self.mousePosition = (mx, my)
+        else:
+            self.mousePosition = (None, None)
+
+    def mouseMoved(self, event):
+        self.checkParametersHover(event)
+
+    def drawParametersText(self, canvas, x, y):
+        captionColor = LowPolyGenerator.rgbString(180,180,180)
+        lighterBackgroundColor = LowPolyGenerator.rgbString(78,78,78)
+        text = f" Blur size: {self.app.blurSize} \n Sharpen: {self.app.sharpen} \n Edge Detection Bounds: ({self.app.cannyLow} : {self.app.cannyHigh}) \n Approximate Randomly Sampled Points: {self.app.randomNoiseRate} \n Node Sample Rate: {self.app.nodeSampleRate} \n Node Threshold Distance and Check Rate: {self.app.nodeSampleDistanceThreshold}, {self.app.nodeThresholdRate}"
+        canvas.create_rectangle(x - 175, y - 150, x + 175, y - 40, fill=lighterBackgroundColor)
+        canvas.create_text(x - 175, y - 50, text=text, fill=captionColor, anchor="sw")
+
     def redrawAll(self, canvas):
         self.drawGrid(canvas)
         canvas.create_text(self.width - self.previewSize//2, 20,
@@ -354,6 +422,11 @@ class BridgeMode(Mode):
         if self.previewImage != None:
             canvas.create_image(self.width - self.previewSize//2, self.height//3,
             image = ImageTk.PhotoImage(self.previewImage))
-        self.button.draw(canvas)
+        canvas.create_rectangle(0,0,self.width-self.previewSize, 60, fill=LowPolyGenerator.rgbString(50,50,50), width=0)
+        self.parametersButton.draw(canvas)
+        for button in self.pathButtons:
+            button.draw(canvas)
+        if self.mousePosition != (None, None):
+            self.drawParametersText(canvas, self.mousePosition[0], self.mousePosition[1])
 
 app = PolyBridge(width=1500, height=1000)
