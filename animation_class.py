@@ -23,19 +23,27 @@ class Button():
         canvas.create_text(self.x, self.y, text=self.text,
         fill=LowPolyGenerator.rgbString(180,180,180), font="Arial 12")
 
-    def buttonFunction(self, app):
+    def buttonFunction(self, mode):
         pass
 
 class ParametersButton(Button):
-    def buttonFunction(self, app):
-        app.changeParameters()
+    def buttonFunction(self, mode):
+        mode.changeParameters()
+
+class HelpButton(Button):
+    def buttonFunction(self, mode):
+        mode.app.setActiveMode(mode.app.helpMode)
+
+class ReturnButton(Button):
+    def buttonFunction(self, mode):
+        mode.app.setActiveMode(mode.app.drawMode)
 
 class PathButton(Button):
     def __init__(self, x, y, width, height, color, text, path):
         super().__init__(x, y, width, height, color, text)
         self.path = path
-    def buttonFunction(self, app):
-        app.directory = self.path + "/" + self.text
+    def buttonFunction(self, mode):
+        mode.directory = self.path + "/" + self.text
 
 class SplashButton(Button):
     def buttonFunction(self, app):
@@ -47,9 +55,6 @@ class SplashButton(Button):
         self.x + self.width//2, self.y + self.height//2, fill=self.color)
         canvas.create_text(self.x, self.y, text=self.text,
         fill=LowPolyGenerator.rgbString(180,180,180), font="Arial 30")
-
-lighterBackgroundColor = LowPolyGenerator.rgbString(78,78,78)
-backgroundColor = LowPolyGenerator.rgbString(50,50,50)
 
 # CMU graphics package from http://www.cs.cmu.edu/~112/notes/notes-animations-part2.html
 # Modified to allow for a crucial MVC violation
@@ -69,11 +74,12 @@ class PolyBridge(ModalApp):
         self.drawMode = BridgeMode()
         self.renderMode = RenderMode()
         self.splashScreenMode = SplashScreenMode()
+        self.helpMode = HelpMode()
         self.setActiveMode(self.splashScreenMode)
 
 class SplashScreenMode(Mode):
     def appStarted(self):
-        self.button = SplashButton(self.width//2, 3*self.height//4, 180, 100, LowPolyGenerator.rgbString(78,78,78), "pick a path")
+        self.button = SplashButton(self.width//2, 3*self.height//4, 360, 100, LowPolyGenerator.rgbString(78,78,78), "pick a starting directory")
         self.startPath = ""
 
     def mousePressed(self, event):
@@ -98,6 +104,56 @@ class SplashScreenMode(Mode):
         canvas.create_rectangle(0, 0, self.width, self.height, fill=LowPolyGenerator.rgbString(50,50,50), width=0)
         self.drawBridgeLogo(canvas)
         self.button.draw(canvas)
+
+class HelpMode(Mode):
+    def appStarted(self):
+        self.tipIndex = 0
+        self.blurImage = Image.open(os.getcwd() + "/assets/cmuBS.jpg")
+        self.cannyImage = Image.open(os.getcwd() + "/assets/cmuCanny.jpg")
+        self.polyImage = Image.open(os.getcwd() + "/assets/cmuPoly.jpg")
+        self.blurImage.thumbnail((self.width*0.3, self.width*0.3), Image.ANTIALIAS)
+        self.cannyImage.thumbnail((self.width*0.3, self.width*0.3), Image.ANTIALIAS)
+        self.polyImage.thumbnail((self.width*0.3, self.width*0.3), Image.ANTIALIAS)
+        self.returnButton = ReturnButton(self.width//2, 9*self.height//10, 100, 30, LowPolyGenerator.rgbString(78,78,78), "Return")
+
+        self.tips = ["Use the arrow keys to scroll and resize the file system.","Blur determines the size of blur filter applied to the image. \n Sharpen decides whether to then run a sharpen kernel that \n increases the number of edges detected", "Edge detection bounds determine the lower and upper bounds of edges. \n Generally, higher and closer together is more selective, \n resulting in less nodes (white dots) detected.", "Random sample points and node sample rate \n determine how many pixel \"edges\" as well as random points \n are input into the algorithm", "Node threshold distance is the minimum side length of the generated triangles. \n Threshold check rate determines how likely triangle sides are to be \n ensured to be the minimum length. 100% will yield all sides with that minimum.", "Note that increasing the number of nodes through node or \n random sample rate increases can have an adverse effect on render times."]
+
+    def mousePressed(self, event):
+        mx, my = event.x, event.y
+        button = self.returnButton
+        if mx > button.x - button.width//2 and \
+        mx < button.x + button.width//2 and \
+        my > button.y - button.height//2 and \
+        my < button.y + button.height//2:
+            button.buttonFunction(self)
+
+    def keyPressed(self, event):
+        if event.key == "h":
+            self.app.setActiveMode(self.app.drawMode)
+        if event.key == "Right":
+            self.tipIndex += 1
+            self.tipIndex %= len(self.tips)
+        if event.key == "Left":
+            self.tipIndex -= 1
+            self.tipIndex %= len(self.tips)
+
+    def drawImages(self, canvas):
+        canvas.create_image(self.width//6, self.height//3, image=ImageTk.PhotoImage(self.blurImage))
+        canvas.create_image(self.width//2, self.height//3, image=ImageTk.PhotoImage(self.cannyImage))
+        canvas.create_image(5*self.width//6, self.height//3, image=ImageTk.PhotoImage(self.polyImage))
+
+    def drawTip(self, canvas):
+        canvas.create_text(self.width//2, 2*self.height//3, text=self.tips[self.tipIndex], font="Arial 40", justify="center", fill=LowPolyGenerator.rgbString(180,180,180))
+        canvas.create_text(self.width//2, self.height//16, text=f"Tip {self.tipIndex + 1}", font="Arial 40", justify="center", fill=LowPolyGenerator.rgbString(180,180,180))
+
+    def redrawAll(self, canvas):
+        canvas.create_rectangle(0, 0, self.width, self.height, fill=LowPolyGenerator.rgbString(50,50,50), width=0)
+        self.drawImages(canvas)
+        self.drawTip(canvas)
+        self.returnButton.draw(canvas)
+
+lighterBackgroundColor = LowPolyGenerator.rgbString(78,78,78)
+backgroundColor = LowPolyGenerator.rgbString(50,50,50)
 
 class RenderMode(Mode):
     def appStarted(self):
@@ -137,6 +193,7 @@ class BridgeMode(Mode):
         self.directory = self.app.splashScreenMode.startPath
         self.directoryList = self.generateFileGrid()
         self.parametersButton = ParametersButton(self.width - self.previewSize//2, self.height - 200, 200, 60, LowPolyGenerator.rgbString(78,78,78), "Change Parameters")
+        self.helpButton = HelpButton(self.width - self.previewSize//2, self.height - 140, 100, 30, LowPolyGenerator.rgbString(78,78,78), "Help")
         self.pathButtons = []
         self.generateDirectoryButtons()
         self.folderIcon = Image.open(os.getcwd() + "/assets/folderIcon.jpg")
@@ -188,7 +245,7 @@ class BridgeMode(Mode):
                 c = 0
 
     def checkButtonClicks(self, mx, my):
-        for button in self.pathButtons + [self.parametersButton]:
+        for button in self.pathButtons + [self.parametersButton, self.helpButton]:
             if mx > button.x - button.width//2 and \
             mx < button.x + button.width//2 and \
             my > button.y - button.height//2 and \
@@ -375,7 +432,7 @@ class BridgeMode(Mode):
         nodeSample = plt.axes([0.25, 0.8, 0.65, 0.03])
         nodeThreshold = plt.axes([0.25, 0.9, 0.65, 0.03])
         blurSize = \
-        Slider(blur, "Blur Size", valmin=1, valmax=25,
+        Slider(blur, "Blur Size", valmin=1, valmax=9,
         valinit=self.app.blurSize, valstep=2)
         sharpen = \
         Slider(sharpenAx, "Sharpen", valmin=0, valmax=1,
@@ -387,7 +444,7 @@ class BridgeMode(Mode):
         Slider(high, "Edge High", slidermin=cannyLow, valmin=1, valmax=1000,
         valinit=self.app.cannyHigh, valstep=1)
         noiseRate = \
-        Slider(noise, "Noise Rate", valmin=0, valmax=10000,
+        Slider(noise, "Noise Rate", valmin=0, valmax=5000,
         valinit=self.app.randomNoiseRate, valstep=100)
         nodeSampleDistanceThreshold = \
         Slider(threshold, "Threshold distance", valmin=0, valmax=100,
@@ -443,6 +500,7 @@ class BridgeMode(Mode):
             image = ImageTk.PhotoImage(self.previewImage))
         canvas.create_rectangle(0,0,self.width-self.previewSize, 60, fill=LowPolyGenerator.rgbString(50,50,50), width=0)
         self.parametersButton.draw(canvas)
+        self.helpButton.draw(canvas)
         for button in self.pathButtons:
             button.draw(canvas)
         if self.mousePosition != (None, None):
