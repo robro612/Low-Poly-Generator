@@ -144,7 +144,7 @@ class HelpMode(Mode):
 
     def drawTip(self, canvas):
         canvas.create_text(self.width//2, 2*self.height//3, text=self.tips[self.tipIndex], font="Arial 40", justify="center", fill=LowPolyGenerator.rgbString(180,180,180))
-        canvas.create_text(self.width//2, self.height//16, text=f"Tip {self.tipIndex + 1}", font="Arial 40", justify="center", fill=LowPolyGenerator.rgbString(180,180,180))
+        canvas.create_text(self.width//2, self.height//16, text=f"Tip #{self.tipIndex + 1}", font="Arial 40", justify="center", fill=LowPolyGenerator.rgbString(180,180,180))
 
     def redrawAll(self, canvas):
         canvas.create_rectangle(0, 0, self.width, self.height, fill=LowPolyGenerator.rgbString(50,50,50), width=0)
@@ -494,7 +494,7 @@ class BridgeMode(Mode):
     def redrawAll(self, canvas):
         self.drawGrid(canvas)
         canvas.create_text(self.width - self.previewSize//2, 20,
-        text = f"{self.selectedFile}", font="Arial 12", fill="white")
+        text = f"{self.selectedFile}", font="Arial 12", fill=LowPolyGenerator.rgbString(180,180,180))
         if self.previewImage != None:
             canvas.create_image(self.width - self.previewSize//2, self.height//3,
             image = ImageTk.PhotoImage(self.previewImage))
