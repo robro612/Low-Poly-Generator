@@ -139,6 +139,8 @@ class BridgeMode(Mode):
         self.parametersButton = ParametersButton(self.width - self.previewSize//2, self.height - 200, 200, 60, LowPolyGenerator.rgbString(78,78,78), "Change Parameters")
         self.pathButtons = []
         self.generateDirectoryButtons()
+        self.folderIcon = Image.open(os.getcwd() + "/assets/folderIcon.jpg")
+        self.fileIcon = Image.open(os.getcwd() + "/assets/fileIcon.jpg")
 
     def generateDirectoryButtons(self):
         self.pathButtons = []
@@ -287,15 +289,24 @@ class BridgeMode(Mode):
                 image=ImageTk.PhotoImage(self.thumbnails[i][0]))
             else:
                 if os.path.isdir(self.thumbnails[i][1]):
-                    color = folderIconColor
+                    iconThumbnail = self.folderIcon.copy()
+                    iconThumbnail.thumbnail((self.thumbnailSize//2,self.thumbnailSize//2), Image.ANTIALIAS)
                 else:
-                    color = "green"
-                canvas.create_rectangle(
-                c*thumbnailSize + self.thumbnailSize//2 - self.thumbnailSize//4 + (c+1)*self.margin,
-                r*thumbnailSize + self.thumbnailSize//2 - self.thumbnailSize//4 + (r+1)*self.margin - self.scroll,
-                c*thumbnailSize + self.thumbnailSize//2 + self.thumbnailSize//4 + (c+1)*self.margin,
-                r*thumbnailSize + self.thumbnailSize//2 + self.thumbnailSize//4 + (r+1)*self.margin - self.scroll,
-                fill = color)
+                    iconThumbnail = self.fileIcon.copy()
+                    iconThumbnail.thumbnail((self.thumbnailSize//2,self.thumbnailSize//2), Image.ANTIALIAS)
+
+                color = folderIconColor
+                canvas.create_image(c*thumbnailSize + self.thumbnailSize//2 + (c+1)*self.margin,
+                r*thumbnailSize + self.thumbnailSize//2 - self.scroll + (r+1)*self.margin,
+                image=ImageTk.PhotoImage(iconThumbnail))
+                # else:
+                #     color = "green"
+                #     canvas.create_rectangle(
+                #     c*thumbnailSize + self.thumbnailSize//2 - self.thumbnailSize//4 + (c+1)*self.margin,
+                #     r*thumbnailSize + self.thumbnailSize//2 - self.thumbnailSize//4 + (r+1)*self.margin - self.scroll,
+                #     c*thumbnailSize + self.thumbnailSize//2 + self.thumbnailSize//4 + (c+1)*self.margin,
+                #     r*thumbnailSize + self.thumbnailSize//2 + self.thumbnailSize//4 + (r+1)*self.margin - self.scroll,
+                #     fill = color)
             imgName = self.thumbnails[i][1].split("/")[-1]
             if imgName == self.directory.split("/")[-2]:
                 imgName = ".."
