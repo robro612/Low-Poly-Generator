@@ -182,7 +182,7 @@ def runDrawing(lowPolyGenerator):
 
 TEST = False
 if TEST:
-    fileName = "cmu.jpg"
+    fileName = "duh/dababy3.jpg"
     path = os.getcwd() + "/images/" + fileName
     lowPolyGenerator = LowPolyGenerator(path)
     lowPolyGenerator.generateTriangulation()

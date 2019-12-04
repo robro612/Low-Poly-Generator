@@ -42,6 +42,14 @@ class SplashButton(Button):
         # file dialog from https://stackoverflow.com/questions/11295917/how-to-select-a-directory-and-store-the-location-using-tkinter-in-python
         app.startPath = filedialog.askdirectory()
 
+    def draw(self, canvas):
+        canvas.create_rectangle(self.x - self.width//2, self.y - self.height//2,
+        self.x + self.width//2, self.y + self.height//2, fill=self.color)
+        canvas.create_text(self.x, self.y, text=self.text,
+        fill=LowPolyGenerator.rgbString(180,180,180), font="Arial 30")
+
+lighterBackgroundColor = LowPolyGenerator.rgbString(78,78,78)
+backgroundColor = LowPolyGenerator.rgbString(50,50,50)
 
 # CMU graphics package from http://www.cs.cmu.edu/~112/notes/notes-animations-part2.html
 # Modified to allow for a crucial MVC violation
@@ -65,7 +73,7 @@ class PolyBridge(ModalApp):
 
 class SplashScreenMode(Mode):
     def appStarted(self):
-        self.button = SplashButton(self.width//2, self.height//2, 100, 100, "red", "pick a path")
+        self.button = SplashButton(self.width//2, 3*self.height//4, 180, 100, LowPolyGenerator.rgbString(78,78,78), "pick a path")
         self.startPath = ""
 
     def mousePressed(self, event):
@@ -79,7 +87,16 @@ class SplashScreenMode(Mode):
         if self.startPath != "":
             self.app.setActiveMode(self.app.drawMode)
 
+    def drawBridgeLogo(self, canvas):
+        brown = LowPolyGenerator.rgbString(38,28,4)
+        orange = LowPolyGenerator.rgbString(242,183,63)
+        canvas.create_rectangle(100,100,self.width - 100, self.height//2 - 100, fill=orange, width=0)
+        canvas.create_rectangle(110,110,self.width - 110, self.height//2 - 110, fill=brown, width=0)
+        canvas.create_text(self.width//2, self.height//4, text="Low Poly Generator", font="Arial 120", fill=orange)
+
     def redrawAll(self, canvas):
+        canvas.create_rectangle(0, 0, self.width, self.height, fill=LowPolyGenerator.rgbString(50,50,50), width=0)
+        self.drawBridgeLogo(canvas)
         self.button.draw(canvas)
 
 class RenderMode(Mode):
@@ -96,7 +113,6 @@ class RenderMode(Mode):
             # how-to-convert-a-python-tkinter-canvas-postscript-file-to-an-image-file-readable
             ps = canvas.postscript(colormode='color')
             image = Image.open(io.BytesIO(ps.encode('utf-8')))
-
             self.app.rendered = image
             self.app.width, self.app.height = self.tempW, self.tempH
         self.app.setActiveMode(self.app.drawMode)
@@ -117,7 +133,7 @@ class BridgeMode(Mode):
         self.previewImage = None
         self.showHidden = False
         self.mousePosition = (None, None)
-        self.thumbnailSize = (self.width - self.previewSize - 5*self.margin)//3
+        self.thumbnailSize = (self.width - self.previewSize - 4*self.margin)//3
         self.directory = self.app.splashScreenMode.startPath
         self.directoryList = self.generateFileGrid()
         self.parametersButton = ParametersButton(self.width - self.previewSize//2, self.height - 200, 200, 60, LowPolyGenerator.rgbString(78,78,78), "Change Parameters")
@@ -136,7 +152,6 @@ class BridgeMode(Mode):
             for button in self.pathButtons:
                 button.x -= 105
         self.generateFileGrid()
-
 
     def generateFileGrid(self):
         thumbnailSize = self.thumbnailSize
@@ -157,22 +172,18 @@ class BridgeMode(Mode):
         thumbnails = []
         for file in files:
             thumbnail = Image.open(file)
-            thumbnail.thumbnail((self.thumbnailSize*0.8, self.thumbnailSize*0.8),
-            Image.ANTIALIAS)
+            thumbnail.thumbnail((self.thumbnailSize*0.8, self.thumbnailSize*0.8), Image.ANTIALIAS)
             thumbnails.append((thumbnail,file))
         self.thumbnails = directoryThumbnails + thumbnails
         maxC = (self.width - self.previewSize - 4*self.margin)//self.thumbnailSize
-        try:
-            self.thumbnailArray = [[None]*maxC for _ in range(len(self.thumbnails)//maxC + 1)]
-            r,c = 0,0
-            for i in range(len(self.thumbnails)):
-                self.thumbnailArray[r][c] = self.thumbnails[i]
-                c += 1
-                if c > maxC - 1:
-                    r += 1
-                    c = 0
-        except:
-            pass
+        self.thumbnailArray = [[None]*maxC for _ in range(len(self.thumbnails)//maxC + 1)]
+        r,c = 0,0
+        for i in range(len(self.thumbnails)):
+            self.thumbnailArray[r][c] = self.thumbnails[i]
+            c += 1
+            if c > maxC - 1:
+                r += 1
+                c = 0
 
     def checkButtonClicks(self, mx, my):
         for button in self.pathButtons + [self.parametersButton]:
@@ -230,7 +241,7 @@ class BridgeMode(Mode):
                 self.previewImage = self.app.rendered
                 self.previewImage = self.trim(self.previewImage)
                  #Magic Number
-                self.previewImage.thumbnail((500,500))
+                self.previewImage.thumbnail((2*self.previewSize//3, 2*self.previewSize//3))
                 self.app.renderMode = RenderMode()
                 self.generateFileGrid()
             elif os.path.isdir(self.selectedFile):
@@ -301,7 +312,6 @@ class BridgeMode(Mode):
     def keyPressed(self, event):
         scrollDelta = 40
         thumbnailDelta = 20
-        previewDelta = 20
         if event.key == "Down":
             self.scroll += scrollDelta
         elif event.key == "Up":
@@ -316,10 +326,8 @@ class BridgeMode(Mode):
             self.thumbnailSize += thumbnailDelta
             self.scrollDelta = int(1.3*scrollDelta)
             self.directoryList = self.generateFileGrid()
-        elif event.key == "g":
-            self.previewSize += previewDelta
-            self.thumbnailSize = self.previewSize//2
-            self.directoryList = self.generateFileGrid()
+        elif event.key == "h":
+            self.app.setActiveMode(self.app.helpMode)
         elif event.key == "p":
             self.changeParameters()
         elif event.key == "s":
