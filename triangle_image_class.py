@@ -1,3 +1,7 @@
+# This class will hold the image, both in its triangulated and regular forms
+# and will have an option to save it as a scaleable static image from TK render
+# rather than trying to animate real time every vertex and triangle
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.image import imread
@@ -7,10 +11,6 @@ from cmu_112_graphics import *
 from triangulator_class import *
 from PIL import Image
 import cv2, random, time, io
-
-# This class will hold the image, both in its triangulated and regular forms
-# and will have an option to save it as a scaleable static image from TK render
-# rather than trying to animate real time every vertex and such
 
 class LowPolyImage:
     def __init__(self, generator, path):
@@ -30,13 +30,12 @@ class LowPolyImage:
         app = ThumbnailRender(width = w, height = h, lowPolyImage = self, thumbnailSize = thumbnailSize)
         app.quit()
 
-
-
 class ThumbnailRender(App):
     def appStarted(self):
         self.timerDelay = 100
         self.lowPolyImage = None
 
+    # loads image parameters, not same as render parameters
     def loadParams(self, lowPolyImage, thumbnailSize):
         self.lowPolyImage = lowPolyImage
         self.thumbnailSize = thumbnailSize

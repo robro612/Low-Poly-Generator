@@ -1,3 +1,7 @@
+# The animation_class.py file houses the code for the actual animation:
+# Button classes and subclasses, and ModalApp architecture
+# Run this file as main to run actual experience.
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
@@ -10,6 +14,7 @@ from triangulator_class import *
 from PIL import Image, ImageChops
 import cv2, random, time, io
 
+#Base Button Class
 class Button():
     def __init__(self, x, y, width, height, color, text):
         self.x, self.y = x, y
@@ -25,18 +30,19 @@ class Button():
 
     def buttonFunction(self, mode):
         pass
-
+# Skews of buttons with spcific methods (change parameters, go to Help screen)
 class ParametersButton(Button):
     def buttonFunction(self, mode):
         mode.changeParameters()
 
 class HelpButton(Button):
     def buttonFunction(self, mode):
+        mode.selected = (-1,-1)
         mode.app.setActiveMode(mode.app.helpMode)
 
 class ReturnButton(Button):
     def buttonFunction(self, mode):
-        mode.app.setActiveMode(mode.app.drawMode)
+        mode.app.setActiveMode(mode.app.bridgeMode)
 
 class PathButton(Button):
     def __init__(self, x, y, width, height, color, text, path):
@@ -71,7 +77,7 @@ class PolyBridge(ModalApp):
         self.nodeSampleDistanceThreshold = 20
         self.nodeSampleRate = 0.1
         self.nodeThresholdRate = 0.2
-        self.drawMode = BridgeMode()
+        self.bridgeMode = BridgeMode()
         self.renderMode = RenderMode()
         self.splashScreenMode = SplashScreenMode()
         self.helpMode = HelpMode()
@@ -79,9 +85,9 @@ class PolyBridge(ModalApp):
 
 class SplashScreenMode(Mode):
     def appStarted(self):
-        self.button = SplashButton(self.width//2, 3*self.height//4, 360, 100, LowPolyGenerator.rgbString(78,78,78), "pick a starting directory")
+        self.button = SplashButton(self.width//2, 3*self.height//4, 360, 100, LowPolyGenerator.rgbString(78,78,78), "Pick a starting directory")
         self.startPath = ""
-
+    # Checks if buttons are pressed
     def mousePressed(self, event):
         mx, my = event.x, event.y
         button = self.button
@@ -91,20 +97,22 @@ class SplashScreenMode(Mode):
         my < button.y + button.height//2:
             button.buttonFunction(self)
         if self.startPath != "":
-            self.app.setActiveMode(self.app.drawMode)
+            self.app.setActiveMode(self.app.bridgeMode)
 
     def drawBridgeLogo(self, canvas):
         brown = LowPolyGenerator.rgbString(38,28,4)
         orange = LowPolyGenerator.rgbString(242,183,63)
         canvas.create_rectangle(100,100,self.width - 100, self.height//2 - 100, fill=orange, width=0)
         canvas.create_rectangle(110,110,self.width - 110, self.height//2 - 110, fill=brown, width=0)
-        canvas.create_text(self.width//2, self.height//4, text="Low Poly Generator", font="Arial 120", fill=orange)
+        canvas.create_text(self.width//2, self.height//4, text="LowPolyGen", font="Arial 120", fill=orange)
 
     def redrawAll(self, canvas):
         canvas.create_rectangle(0, 0, self.width, self.height, fill=LowPolyGenerator.rgbString(50,50,50), width=0)
         self.drawBridgeLogo(canvas)
         self.button.draw(canvas)
 
+# Help screen mode that demonstrates steps of rendering and the effects of
+# each parameter on the image's render
 class HelpMode(Mode):
     def appStarted(self):
         self.tipIndex = 0
@@ -118,6 +126,7 @@ class HelpMode(Mode):
 
         self.tips = ["Use the arrow keys to scroll and resize the file system.","Blur determines the size of blur filter applied to the image. \n Sharpen decides whether to then run a sharpen kernel that \n increases the number of edges detected", "Edge detection bounds determine the lower and upper bounds of edges. \n Generally, higher and closer together is more selective, \n resulting in less nodes (white dots) detected.", "Random sample points and node sample rate \n determine how many pixel \"edges\" as well as random points \n are input into the algorithm", "Node threshold distance is the minimum side length of the generated triangles. \n Threshold check rate determines how likely triangle sides are to be \n ensured to be the minimum length. 100% will yield all sides with that minimum.", "Note that increasing the number of nodes through node or \n random sample rate increases can have an adverse effect on render times."]
 
+    # checks if buttons are pressed
     def mousePressed(self, event):
         mx, my = event.x, event.y
         button = self.returnButton
@@ -128,14 +137,14 @@ class HelpMode(Mode):
             button.buttonFunction(self)
 
     def keyPressed(self, event):
-        if event.key == "h":
-            self.app.setActiveMode(self.app.drawMode)
         if event.key == "Right":
             self.tipIndex += 1
             self.tipIndex %= len(self.tips)
-        if event.key == "Left":
+        elif event.key == "Left":
             self.tipIndex -= 1
             self.tipIndex %= len(self.tips)
+        elif event.key == "h":
+            self.app.setActiveMode(self.app.bridgeMode)
 
     def drawImages(self, canvas):
         canvas.create_image(self.width//6, self.height//3, image=ImageTk.PhotoImage(self.blurImage))
@@ -152,9 +161,8 @@ class HelpMode(Mode):
         self.drawTip(canvas)
         self.returnButton.draw(canvas)
 
-lighterBackgroundColor = LowPolyGenerator.rgbString(78,78,78)
-backgroundColor = LowPolyGenerator.rgbString(50,50,50)
-
+# This is the ModalApp Mode that draws all of the triangles in a split second
+# then immediately exits back to the bridge mode
 class RenderMode(Mode):
     def appStarted(self):
         self.lowPolyImage, self.renderSize = self.app.toRender
@@ -171,13 +179,15 @@ class RenderMode(Mode):
             image = Image.open(io.BytesIO(ps.encode('utf-8')))
             self.app.rendered = image
             self.app.width, self.app.height = self.tempW, self.tempH
-        self.app.setActiveMode(self.app.drawMode)
+        self.app.setActiveMode(self.app.bridgeMode)
     def keyPressed(self, event):
         if event.key == "s":
             self.app.saveSnapshot()
         else:
-            self.app.setActiveMode(self.app.drawMode)
+            self.app.setActiveMode(self.app.bridgeMode)
 
+# This is the mode where most of the UX is done. This is meant to mimic the
+# Adobe Bridge aesthetic
 class BridgeMode(Mode):
     def appStarted(self):
         self.width, self.height = self.app.width, self.app.height
@@ -199,6 +209,8 @@ class BridgeMode(Mode):
         self.folderIcon = Image.open(os.getcwd() + "/assets/folderIcon.jpg")
         self.fileIcon = Image.open(os.getcwd() + "/assets/fileIcon.jpg")
 
+    # Generates the string of buttons at the top according to the current path
+    # clicking on them is meant to bring
     def generateDirectoryButtons(self):
         self.pathButtons = []
         split = self.directory.split("/")
@@ -210,13 +222,16 @@ class BridgeMode(Mode):
             self.pathButtons.pop(0)
             for button in self.pathButtons:
                 button.x -= 105
-        self.generateFileGrid()
+        try:
+            self.generateFileGrid()
+        except:
+            pass
 
+    # generates a 2D list of thumbnails and paths to be displayed
     def generateFileGrid(self):
         thumbnailSize = self.thumbnailSize
         files, directories = [],[]
         path = self.directory
-
         for file in os.listdir(path):
             if file.endswith(".jpg") or \
             file.endswith(".JPG") or \
@@ -243,7 +258,7 @@ class BridgeMode(Mode):
             if c > maxC - 1:
                 r += 1
                 c = 0
-
+    # checks for button clicks on mouse pressed event
     def checkButtonClicks(self, mx, my):
         for button in self.pathButtons + [self.parametersButton, self.helpButton]:
             if mx > button.x - button.width//2 and \
@@ -254,6 +269,7 @@ class BridgeMode(Mode):
                 return True
         return False
 
+    # Returns the selected file in grid of click
     def getRowCol(self, mx, my):
         for r in range(len(self.thumbnailArray)):
             for c in range(len(self.thumbnailArray[0])):
@@ -266,6 +282,7 @@ class BridgeMode(Mode):
         return (-1,-1)
 
     # whitespace cropping from from https://stackoverflow.com/questions/10615901/trim-whitespace-using-pil
+    # trims whitespace from image capture
     def trim(self, im):
         bg = Image.new(im.mode, im.size, im.getpixel((im.size[0]-1,im.size[1]-1)))
         diff = ImageChops.difference(im, bg)
@@ -281,6 +298,7 @@ class BridgeMode(Mode):
             r,c = self.getRowCol(event.x, event.y)
         self.selected = (r,c)
         if (r,c) != (-1,-1):
+            # if the selection isnt empty/default, and its a JPEG, render it
             self.selectedFile = self.thumbnailArray[r][c][1]
             if self.selectedFile.endswith(".jpg") or \
             self.selectedFile.endswith(".JPG") or \
@@ -303,6 +321,7 @@ class BridgeMode(Mode):
                 self.previewImage.thumbnail((2*self.previewSize//3, 2*self.previewSize//3))
                 self.app.renderMode = RenderMode()
                 self.generateFileGrid()
+            #Otherwise, if its a directory, navigate to that
             elif os.path.isdir(self.selectedFile):
                 self.directory = self.selectedFile
                 self.generateFileGrid()
@@ -310,6 +329,7 @@ class BridgeMode(Mode):
                 self.selected = (-1,-1)
         self.generateDirectoryButtons()
 
+    # draws grid of icons on left
     def drawGrid(self, canvas):
         thumbnailSize = self.thumbnailSize
         folderIconColor = LowPolyGenerator.rgbString(120,180,210)
@@ -389,37 +409,48 @@ class BridgeMode(Mode):
             self.thumbnailSize -= thumbnailDelta
             self.thumbnailSize = max(self.thumbnailSize, 1)
             self.scrollDelta = int(0.7*scrollDelta)
-            self.directoryList = self.generateFileGrid()
+            try:
+                self.directoryList = self.generateFileGrid()
+            except:
+                pass
         elif event.key == "Right":
             self.thumbnailSize += thumbnailDelta
             self.scrollDelta = int(1.3*scrollDelta)
-            self.directoryList = self.generateFileGrid()
+            try:
+                self.directoryList = self.generateFileGrid()
+            except:
+                pass
         elif event.key == "h":
             self.app.setActiveMode(self.app.helpMode)
         elif event.key == "p":
             self.changeParameters()
         elif event.key == "s":
-            if self.previewImage != None:
-                name = self.selectedFile.split("/")[-1]
-                name = name.split(".")[0]
-                hashStr = hash((self.app.blurSize,
-                self.app.sharpen,
-                self.app.cannyLow,
-                self.app.cannyHigh,self.app.randomNoiseRate,
-                self.app.nodeSampleDistanceThreshold,
-                self.app.nodeSampleRate,
-                self.app.nodeThresholdRate))
-                hashStr = str(hashStr)[-4:]
-                try:
-                    os.mkdir(os.path() + "/Saved")
-                except:
-                    pass
-                self.previewImage.save(f"./Saved/{name}Poly{hashStr}.jpg")
-                print("Saved")
+            self.saveImage()
+
+    # Saves the current previewed image
+    def saveImage(self):
+        if self.previewImage != None:
+            name = self.selectedFile.split("/")[-1]
+            name = name.split(".")[0]
+            hashStr = hash((self.app.blurSize,
+            self.app.sharpen,
+            self.app.cannyLow,
+            self.app.cannyHigh,self.app.randomNoiseRate,
+            self.app.nodeSampleDistanceThreshold,
+            self.app.nodeSampleRate,
+            self.app.nodeThresholdRate))
+            hashStr = str(hashStr)[-4:]
+            try:
+                os.mkdir(os.path() + "/Saved")
+            except:
+                pass
+            self.previewImage.save(f"./Saved/{name}Poly{hashStr}.jpg")
+            print("Saved")
         elif event.key == ".":
             self.showHidden = not self.showHidden
             self.directoryList = self.generateFileGrid()
 
+    # Displays Matplotlib sliders to change parameters
     def changeParameters(self):
         fig, ax = plt.subplots(figsize=(8.5, 3))
         plt.axis('off')
@@ -470,6 +501,7 @@ class BridgeMode(Mode):
             if not (i*100 == self.previewSize):
                 canvas.create_line(100*i, 0, 100*i, self.height)
 
+    # Checks if mouse is hovering over the parameters button
     def checkParametersHover(self, event):
         button = self.parametersButton
         mx, my = event.x, event.y
@@ -484,10 +516,11 @@ class BridgeMode(Mode):
     def mouseMoved(self, event):
         self.checkParametersHover(event)
 
+    # Draws box with current parameters on hover
     def drawParametersText(self, canvas, x, y):
         captionColor = LowPolyGenerator.rgbString(180,180,180)
         lighterBackgroundColor = LowPolyGenerator.rgbString(78,78,78)
-        text = f" Blur size: {self.app.blurSize} \n Sharpen: {self.app.sharpen} \n Edge Detection Bounds: ({self.app.cannyLow} : {self.app.cannyHigh}) \n Approximate Randomly Sampled Points: {self.app.randomNoiseRate} \n Node Sample Rate: {self.app.nodeSampleRate} \n Node Threshold Distance and Check Rate: {self.app.nodeSampleDistanceThreshold}, {self.app.nodeThresholdRate}"
+        text = f" Blur size: {self.app.blurSize} \n Sharpen: {self.app.sharpen} \n Edge Detection Bounds: ({self.app.cannyLow} : {self.app.cannyHigh}) \n Approximate Randomly Sampled Points: {self.app.randomNoiseRate} \n Node Sample Rate: {self.app.nodeSampleRate} \n Node Threshold Distance and Check Rate: {(100*self.app.nodeSampleDistanceThreshold)//100}, {self.app.nodeThresholdRate}"
         canvas.create_rectangle(x - 175, y - 150, x + 175, y - 40, fill=lighterBackgroundColor)
         canvas.create_text(x - 175, y - 50, text=text, fill=captionColor, anchor="sw")
 
@@ -496,8 +529,7 @@ class BridgeMode(Mode):
         canvas.create_text(self.width - self.previewSize//2, 20,
         text = f"{self.selectedFile}", font="Arial 12", fill=LowPolyGenerator.rgbString(180,180,180))
         if self.previewImage != None:
-            canvas.create_image(self.width - self.previewSize//2, self.height//3,
-            image = ImageTk.PhotoImage(self.previewImage))
+            canvas.create_image(self.width - self.previewSize//2, self.height//3, image = ImageTk.PhotoImage(self.previewImage))
         canvas.create_rectangle(0,0,self.width-self.previewSize, 60, fill=LowPolyGenerator.rgbString(50,50,50), width=0)
         self.parametersButton.draw(canvas)
         self.helpButton.draw(canvas)
@@ -506,4 +538,5 @@ class BridgeMode(Mode):
         if self.mousePosition != (None, None):
             self.drawParametersText(canvas, self.mousePosition[0], self.mousePosition[1])
 
-app = PolyBridge(width=1500, height=1000)
+if __name__ == "__main__":
+    app = PolyBridge(width=1500, height=1000)
